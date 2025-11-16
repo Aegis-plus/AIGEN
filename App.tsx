@@ -147,6 +147,12 @@ const App: React.FC = () => {
   const isAirforceModelSelected = selectedModel?.provider === 'api.airforce';
   const isGenerateDisabled = isLoading || (isAirforceModelSelected && countdown > 0);
 
+  const getButtonText = () => {
+    if (isLoading) return 'SYNTHESIZING...';
+    if (isAirforceModelSelected && countdown > 0) return `RECHARGING (${countdown}s)`;
+    return 'GENERATE';
+  };
+
   return (
     <div className="min-h-screen bg-[#0D1117] text-gray-200 flex flex-col font-mono">
       <Header />
@@ -177,22 +183,28 @@ const App: React.FC = () => {
         </div>
       </main>
       <footer className="w-full p-4 sticky bottom-0 bg-[#0D1117]/80 backdrop-blur-sm border-t border-cyan-500/20">
-        <div className="max-w-4xl mx-auto flex flex-col gap-2">
-          <div className="flex items-center gap-2">
+        <div className="max-w-4xl mx-auto flex flex-col gap-3">
+          <PromptInput
+            prompt={prompt}
+            setPrompt={setPrompt}
+            onGenerate={handleGenerate}
+            isLoading={isLoading}
+            isSubmitDisabled={isGenerateDisabled}
+          />
+          <div className="flex items-stretch gap-2">
             <ModelSelector
               model={selectedModelId}
               setModel={setSelectedModelId}
               isLoading={isLoading}
               models={ALL_MODELS}
             />
-            <PromptInput
-              prompt={prompt}
-              setPrompt={setPrompt}
-              onGenerate={handleGenerate}
-              isLoading={isLoading}
-              isDisabled={isGenerateDisabled}
-              countdown={countdown}
-            />
+            <button
+              onClick={handleGenerate}
+              disabled={isGenerateDisabled || !prompt.trim()}
+              className="flex-grow flex items-center justify-center px-4 py-2 bg-cyan-500 text-black font-bold rounded-md shadow-lg hover:bg-cyan-400 hover:shadow-cyan-500/50 disabled:hover:shadow-none disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed transition-all duration-200"
+            >
+              <span>{getButtonText()}</span>
+            </button>
           </div>
           <div className="text-center text-xs text-gray-500 pt-1">
             <span>Made by <a href="http://www.aegis.zone.id" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition-colors">AEGIS+</a></span>
