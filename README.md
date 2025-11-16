@@ -1,5 +1,5 @@
-# SYNTHESIZE REALITY
-
+# IMAGEN-free
+## SYNTHESIZE REALITY
 Input data stream. Generate visual output.
 
 A web application that leverages AI models through the g4f.dev API to generate images from text prompts.
