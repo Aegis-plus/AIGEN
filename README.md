@@ -1,20 +1,64 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# SYNTHESIZE REALITY
 
-# Run and deploy your AI Studio app
+Input data stream. Generate visual output.
 
-This contains everything you need to run your app locally.
+A web application that leverages AI models through the g4f.dev API to generate images from text prompts.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1deYk-7rgNzM3GeR7QVPLOW3tf7EizeCi
+## Features
 
-## Run Locally
+*   **AI-Powered Image Generation:** Create unique images from descriptive text prompts.
+*   **Model Selection:** Choose from a variety of AI models and providers, including options from 'worker' and 'api.airforce'.
+*   **Rate Limiting Awareness:** Includes a cooldown mechanism for specific API providers to manage request rates.
+*   **Generation History:** Keeps a local history of your generated images and prompts, powered by `localStorage`.
+*   **Full-Screen Viewer:** Easily view your generated images in a larger format.
 
-**Prerequisites:**  Node.js
+## Technologies Used
 
+*   **Frontend:** React, Vite
+*   **AI Integration:** g4f.dev API
+*   **Styling:** Tailwind CSS (inferred from class names)
+*   **Language:** TypeScript
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Installation & Setup
+
+1.  Clone the repository:
+    ```bash
+    git clone https://github.com/Aegis-plus/AIGEN.git
+    ```
+2.  Navigate to the project directory:
+    ```bash
+    cd AIGEN
+    ```
+3.  Install dependencies:
+    ```bash
+    npm install
+    # or
+    yarn install
+    ```
+4.  Start the development server:
+    ```bash
+    npm run dev
+    # or
+    yarn dev
+    ```
+
+## Usage
+
+1.  Open the application in your browser (usually at `http://localhost:5173` or a similar port).
+2.  Select your desired AI model from the dropdown menu.
+3.  Enter a descriptive prompt in the input field.
+4.  Click the "Generate" button (or press Enter).
+5.  View your generated image, and it will be added to your history.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request or open an issue.
+
+## License
+
+This project is not specified with a license.
+
+## Acknowledgements
+
+*   Made by AEGIS+
+*   Powered by [g4f.dev](https://g4f.dev)
