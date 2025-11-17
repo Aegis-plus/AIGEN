@@ -19,6 +19,7 @@ const ALL_MODELS: Model[] = [
 ];
 
 const ITEMS_PER_PAGE = 10;
+const MAX_HISTORY_ITEMS = 50; // Cap history to prevent localStorage quota errors
 
 const App: React.FC = () => {
   // Image generation state
@@ -38,6 +39,7 @@ const App: React.FC = () => {
   // History state
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [historyPage, setHistoryPage] = useState<number>(1);
+  const [historyError, setHistoryError] = useState<string | null>(null);
 
   // Full screen state
   const [fullScreenData, setFullScreenData] = useState<{imageUrl: string, prompt: string} | null>(null);
@@ -55,22 +57,70 @@ const App: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to load state from localStorage:', error);
+      setHistoryError('Could not load history from storage.');
     }
   }, []);
 
-  // Save history to localStorage whenever it changes
-  useEffect(() => {
-    try {
-      localStorage.setItem('generationHistory', JSON.stringify(history));
-    } catch (error) {
-      console.error('Failed to save history to localStorage:', error);
+  const saveHistory = useCallback((newHistory: HistoryItem[]) => {
+    // Handle clearing history
+    if (newHistory.length === 0) {
+      try {
+        localStorage.setItem('generationHistory', '[]');
+        setHistory([]);
+        setHistoryError(null);
+      } catch (e) {
+        console.error('Failed to clear history in localStorage:', e);
+        setHistoryError('Could not clear history. Storage may be full or disabled.');
+        setTimeout(() => setHistoryError(null), 5000);
+      }
+      return;
     }
-  }, [history]);
+
+    // Handle adding items with pruning logic
+    let historyToSave = [...newHistory];
+    const originalLength = newHistory.length;
+
+    // Prune by item count first as a baseline
+    if (historyToSave.length > MAX_HISTORY_ITEMS) {
+      historyToSave = historyToSave.slice(0, MAX_HISTORY_ITEMS);
+    }
+
+    while (historyToSave.length > 0) {
+      try {
+        localStorage.setItem('generationHistory', JSON.stringify(historyToSave));
+        // Success
+        break;
+      } catch (error: any) {
+        if ((error.name === 'QuotaExceededError' || (error.code && (error.code === 22 || error.code === 1014)))) {
+          // Quota exceeded, remove the oldest item (which is at the end) and retry
+          historyToSave.pop();
+        } else {
+          console.error('Failed to save history to localStorage:', error);
+          setHistoryError('An unexpected error occurred while saving history.');
+          setTimeout(() => setHistoryError(null), 5000);
+          setHistory(newHistory); // Still update state with intended history
+          return;
+        }
+      }
+    }
+    
+    // After loop, update state with the final savable history
+    setHistory(historyToSave);
+
+    if (historyToSave.length < originalLength) {
+      setHistoryError('Storage limit reached. Oldest items were removed to make space.');
+      setTimeout(() => setHistoryError(null), 5000);
+    } else {
+      setHistoryError(null);
+    }
+  }, []);
   
   // Save prompt to localStorage whenever it changes
   useEffect(() => {
     try {
-      localStorage.setItem('lastPrompt', prompt);
+      if (prompt) {
+        localStorage.setItem('lastPrompt', prompt);
+      }
     } catch (error) {
       console.error('Failed to save prompt to localStorage:', error);
     }
@@ -95,7 +145,6 @@ const App: React.FC = () => {
         }
     }, 1000);
     
-    // Set initial countdown value immediately
     const remaining = Math.ceil((airforceCooldownUntil - Date.now()) / 1000);
     setCountdown(remaining > 0 ? remaining : 0);
 
@@ -105,7 +154,6 @@ const App: React.FC = () => {
   // Automatically adjust settings based on the selected model
   useEffect(() => {
     const currentModel = ALL_MODELS.find(m => m.id === selectedModelId);
-    // For any provider other than 'worker', force square aspect ratio as others are unreliable.
     if (currentModel?.provider !== 'worker') {
       setAspectRatio('square');
     }
@@ -116,6 +164,8 @@ const App: React.FC = () => {
     const totalPages = Math.ceil(history.length / ITEMS_PER_PAGE);
     if (historyPage > totalPages && totalPages > 0) {
       setHistoryPage(totalPages);
+    } else if (history.length === 0) {
+      setHistoryPage(1);
     }
   }, [history, historyPage]);
 
@@ -152,14 +202,14 @@ const App: React.FC = () => {
       const generatedImageUrl = await generateImage(prompt, selectedModel, aspectRatio);
       setImageUrl(generatedImageUrl);
 
-      // Add to history
       const newHistoryItem: HistoryItem = {
         imageUrl: generatedImageUrl,
         prompt,
         modelId: selectedModel.id,
         createdAt: Date.now(),
       };
-      setHistory(prev => [newHistoryItem, ...prev]);
+      
+      saveHistory([newHistoryItem, ...history]);
       setHistoryPage(1); // Go to first page to show the new item
 
     } catch (err: any)      {
@@ -167,7 +217,7 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [prompt, selectedModelId, airforceCooldownUntil, aspectRatio]);
+  }, [prompt, selectedModelId, airforceCooldownUntil, aspectRatio, history, saveHistory]);
 
   const openFullScreen = (imageUrl: string, prompt: string) => {
     setFullScreenData({ imageUrl, prompt });
@@ -178,7 +228,7 @@ const App: React.FC = () => {
   };
 
   const handleClearHistory = () => {
-    setHistory([]);
+    saveHistory([]);
     setHistoryPage(1);
   };
 
@@ -220,6 +270,49 @@ const App: React.FC = () => {
             onImageClick={(url) => openFullScreen(url, prompt)}
           />
 
+          <div className="w-full flex flex-col gap-4">
+            <PromptInput
+              prompt={prompt}
+              setPrompt={setPrompt}
+              onGenerate={handleGenerate}
+              isLoading={isLoading}
+              isSubmitDisabled={isGenerateDisabled}
+            />
+            <div className="flex flex-wrap items-stretch gap-2">
+              <ModelSelector
+                model={selectedModelId}
+                setModel={setSelectedModelId}
+                isLoading={isLoading}
+                models={ALL_MODELS}
+              />
+              {isWorkerModelSelected && (
+                <AspectRatioSelector
+                  selectedRatio={aspectRatio}
+                  onRatioChange={setAspectRatio}
+                  isDisabled={isLoading}
+                />
+              )}
+              <button
+                onClick={handleGenerate}
+                disabled={isGenerateDisabled || !prompt.trim()}
+                className="flex-grow flex items-center justify-center px-4 py-2 bg-cyan-500 text-black font-bold rounded-md shadow-lg hover:bg-cyan-400 hover:shadow-cyan-500/50 disabled:hover:shadow-none disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed transition-all duration-200"
+              >
+                <span>{getButtonText()}</span>
+              </button>
+            </div>
+            {!isWorkerModelSelected && (
+              <p className="text-center text-xs text-yellow-400/80 mt-1">
+                  Note: Aspect ratio selection is only available for Leonardo models.
+              </p>
+            )}
+          </div>
+          
+          {historyError && (
+            <div className="w-full text-center text-xs text-yellow-400/90 animate-fade-in p-2 bg-yellow-900/20 border border-yellow-500/30 rounded-md">
+              {historyError}
+            </div>
+          )}
+
           {history.length > 0 && (
             <HistoryGallery
               history={paginatedHistory}
@@ -233,47 +326,11 @@ const App: React.FC = () => {
           )}
         </div>
       </main>
-      <footer className="w-full p-2 sticky bottom-0 bg-[#0D1117]/80 backdrop-blur-sm border-t border-cyan-500/20">
-        <div className="max-w-4xl mx-auto flex flex-col gap-2">
-          <PromptInput
-            prompt={prompt}
-            setPrompt={setPrompt}
-            onGenerate={handleGenerate}
-            isLoading={isLoading}
-            isSubmitDisabled={isGenerateDisabled}
-          />
-          <div className="flex flex-wrap items-stretch gap-2">
-            <ModelSelector
-              model={selectedModelId}
-              setModel={setSelectedModelId}
-              isLoading={isLoading}
-              models={ALL_MODELS}
-            />
-            {isWorkerModelSelected && (
-              <AspectRatioSelector
-                selectedRatio={aspectRatio}
-                onRatioChange={setAspectRatio}
-                isDisabled={isLoading}
-              />
-            )}
-            <button
-              onClick={handleGenerate}
-              disabled={isGenerateDisabled || !prompt.trim()}
-              className="flex-grow flex items-center justify-center px-4 py-2 bg-cyan-500 text-black font-bold rounded-md shadow-lg hover:bg-cyan-400 hover:shadow-cyan-500/50 disabled:hover:shadow-none disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed transition-all duration-200"
-            >
-              <span>{getButtonText()}</span>
-            </button>
-          </div>
-          {!isWorkerModelSelected && (
-            <p className="text-center text-xs text-yellow-400/80 mt-1">
-                Note: Aspect ratio selection is only available for Leonardo models.
-            </p>
-          )}
-          <div className="text-center text-xs text-gray-500 pt-1">
-            <span>Made by <a href="http://www.aegis.zone.id" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition-colors">AEGIS+</a></span>
-            <span className="mx-2">|</span>
-            <span>Powered by <a href="https://g4f.dev" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition-colors">g4f.dev</a></span>
-          </div>
+      <footer className="w-full p-4">
+        <div className="text-center text-xs text-gray-500">
+          <span>Made by <a href="http://www.aegis.zone.id" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition-colors">AEGIS+</a></span>
+          <span className="mx-2">|</span>
+          <span>Powered by <a href="https://g4f.dev" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition-colors">g4f.dev</a></span>
         </div>
       </footer>
       {fullScreenData && (
