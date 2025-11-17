@@ -1,8 +1,11 @@
+
 import React, { useRef, useEffect } from 'react';
+import { PasteIcon } from './icons';
 
 interface PromptInputProps {
   prompt: string;
-  setPrompt: (prompt: string) => void;
+  // FIX: Correctly type `setPrompt` to accept a value or an updater function.
+  setPrompt: React.Dispatch<React.SetStateAction<string>>;
   onGenerate: () => void;
   isLoading: boolean;
   isSubmitDisabled: boolean;
@@ -30,17 +33,42 @@ export const PromptInput: React.FC<PromptInputProps> = ({ prompt, setPrompt, onG
       }
     }
   };
+
+  const handlePaste = async () => {
+    if (isLoading) return;
+    try {
+      const text = await navigator.clipboard.readText();
+      // Appends the pasted text to the current prompt
+      setPrompt(currentPrompt => currentPrompt + text);
+      textareaRef.current?.focus();
+    } catch (err) {
+      console.error('Failed to read clipboard contents: ', err);
+      // Inform the user if pasting fails (e.g., permissions not granted)
+      alert('Could not paste from clipboard. Please grant clipboard access permission to this site.');
+    }
+  };
   
   return (
-    <textarea
-      ref={textareaRef}
-      value={prompt}
-      onChange={(e) => setPrompt(e.target.value)}
-      onKeyDown={handleKeyDown}
-      placeholder="e.g., A cybernetic owl with neon feathers..."
-      className="w-full bg-black/50 border-2 border-gray-700 rounded-md p-3 text-gray-200 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-300 resize-none font-mono max-h-40 overflow-y-auto"
-      rows={1}
-      disabled={isLoading}
-    />
+    <div className="relative w-full">
+      <textarea
+        ref={textareaRef}
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder="e.g., A cybernetic owl with neon feathers..."
+        className="w-full bg-black/50 border-2 border-gray-700 rounded-md p-3 pr-12 text-gray-200 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-300 resize-none font-mono max-h-40 overflow-y-auto"
+        rows={1}
+        disabled={isLoading}
+      />
+      <button
+        onClick={handlePaste}
+        disabled={isLoading}
+        className="absolute top-3 right-5 p-1.5 rounded-md bg-gray-800/60 text-gray-400 hover:bg-cyan-500 hover:text-black transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        aria-label="Paste from clipboard"
+        title="Paste from clipboard"
+      >
+        <PasteIcon />
+      </button>
+    </div>
   );
 };
