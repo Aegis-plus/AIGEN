@@ -17,7 +17,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({ model, setModel, i
   }
 
   return (
-    <div className="relative w-64 flex-shrink-0">
+    <div className="relative w-full sm:w-64">
       <select
         id="model-select"
         value={model}
