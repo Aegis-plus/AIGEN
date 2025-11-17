@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { Header } from './components/Header';
 import { PromptInput } from './components/PromptInput';
@@ -9,10 +10,11 @@ import { FullScreenImageViewer } from './components/FullScreenImageViewer';
 import { HistoryGallery } from './components/HistoryGallery';
 
 const ALL_MODELS: Model[] = [
-  { id: '@cf/leonardo/lucid-origin', provider: 'worker', name: 'Lucid Origin (Worker)' },
-  { id: '@cf/leonardo/phoenix-1.0', provider: 'worker', name: 'Phoenix 1.0 (Worker)' },
-  { id: 'imagen-3', provider: 'api.airforce', name: 'Imagen 3 (API Airforce - 1/min)' },
-  { id: 'imagen-4', provider: 'api.airforce', name: 'Imagen 4 (API Airforce - 1/min)' },
+  { id: '@cf/leonardo/lucid-origin', provider: 'worker', name: 'Lucid Origin' },
+  { id: '@cf/leonardo/phoenix-1.0', provider: 'worker', name: 'Phoenix 1.0' },
+  { id: 'imagen-3', provider: 'api.airforce', name: 'Imagen 3' },
+  { id: 'imagen-4', provider: 'api.airforce', name: 'Imagen 4' },
+  { id: 'ByteDance/Seedream-4', provider: 'deep-infra', name: 'Seedream 4' },
 ];
 
 const App: React.FC = () => {
@@ -33,17 +35,21 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
 
   // Full screen state
-  const [fullScreenImageUrl, setFullScreenImageUrl] = useState<string | null>(null);
+  const [fullScreenData, setFullScreenData] = useState<{imageUrl: string, prompt: string} | null>(null);
 
-  // Load history from localStorage on mount
+  // Load history and prompt from localStorage on mount
   useEffect(() => {
     try {
       const savedHistory = localStorage.getItem('generationHistory');
       if (savedHistory) {
         setHistory(JSON.parse(savedHistory));
       }
+      const savedPrompt = localStorage.getItem('lastPrompt');
+      if (savedPrompt) {
+        setPrompt(savedPrompt);
+      }
     } catch (error) {
-      console.error('Failed to load history from localStorage:', error);
+      console.error('Failed to load state from localStorage:', error);
     }
   }, []);
 
@@ -55,6 +61,15 @@ const App: React.FC = () => {
       console.error('Failed to save history to localStorage:', error);
     }
   }, [history]);
+
+  // Save prompt to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('lastPrompt', prompt);
+    } catch (error) {
+      console.error('Failed to save prompt to localStorage:', error);
+    }
+  }, [prompt]);
 
   useEffect(() => {
     if (!airforceCooldownUntil) {
@@ -131,12 +146,12 @@ const App: React.FC = () => {
     }
   }, [prompt, selectedModelId, airforceCooldownUntil]);
 
-  const openFullScreen = (url: string) => {
-    setFullScreenImageUrl(url);
+  const openFullScreen = (imageUrl: string, prompt: string) => {
+    setFullScreenData({ imageUrl, prompt });
   };
 
   const closeFullScreen = () => {
-    setFullScreenImageUrl(null);
+    setFullScreenData(null);
   };
 
   const handleClearHistory = () => {
@@ -171,7 +186,7 @@ const App: React.FC = () => {
             imageUrl={imageUrl}
             isLoading={isLoading}
             error={error}
-            onImageClick={openFullScreen}
+            onImageClick={(url) => openFullScreen(url, prompt)}
           />
 
           <HistoryGallery
@@ -213,8 +228,12 @@ const App: React.FC = () => {
           </div>
         </div>
       </footer>
-      {fullScreenImageUrl && (
-        <FullScreenImageViewer imageUrl={fullScreenImageUrl} onClose={closeFullScreen} />
+      {fullScreenData && (
+        <FullScreenImageViewer
+          imageUrl={fullScreenData.imageUrl}
+          prompt={fullScreenData.prompt}
+          onClose={closeFullScreen}
+        />
       )}
     </div>
   );

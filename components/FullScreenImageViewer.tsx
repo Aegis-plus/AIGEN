@@ -1,12 +1,16 @@
-import React from 'react';
-import { CloseIcon, DownloadIcon } from './icons';
+
+import React, { useState } from 'react';
+import { CloseIcon, DownloadIcon, CopyIcon } from './icons';
 
 interface FullScreenImageViewerProps {
   imageUrl: string;
+  prompt: string;
   onClose: () => void;
 }
 
-export const FullScreenImageViewer: React.FC<FullScreenImageViewerProps> = ({ imageUrl, onClose }) => {
+export const FullScreenImageViewer: React.FC<FullScreenImageViewerProps> = ({ imageUrl, prompt, onClose }) => {
+  const [isCopied, setIsCopied] = useState(false);
+
   const handleDownload = async () => {
     try {
       const response = await fetch(imageUrl);
@@ -27,6 +31,15 @@ export const FullScreenImageViewer: React.FC<FullScreenImageViewerProps> = ({ im
       // Fallback: Open in new tab
       window.open(imageUrl, '_blank');
     }
+  };
+
+  const handleCopyPrompt = () => {
+    navigator.clipboard.writeText(prompt).then(() => {
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000); // Reset after 2 seconds
+    }, (err) => {
+      console.error('Could not copy text: ', err);
+    });
   };
 
   // Effect to handle closing on 'Escape' key and prevent background scroll
@@ -50,18 +63,44 @@ export const FullScreenImageViewer: React.FC<FullScreenImageViewerProps> = ({ im
       onClick={onClose}
     >
       <div 
-        className="relative max-w-full max-h-full flex flex-col gap-4"
+        className="relative max-w-7xl w-full h-full lg:h-auto lg:max-h-[85vh] flex flex-col lg:flex-row items-center lg:items-start gap-4 lg:gap-8"
         onClick={(e) => e.stopPropagation()}
       >
-        <img 
-          src={imageUrl} 
-          alt="Full screen AI generated" 
-          className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl shadow-cyan-500/20"
-        />
-        <div className="flex justify-center gap-4">
+        {/* Image Column */}
+        <div className="flex-1 flex items-center justify-center w-full h-full lg:h-auto">
+          <img 
+            src={imageUrl} 
+            alt="Full screen AI generated" 
+            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl shadow-cyan-500/20"
+          />
+        </div>
+
+        {/* Info & Actions Column */}
+        <div className="w-full lg:w-80 xl:w-96 flex-shrink-0 flex flex-col gap-4">
+          <div className="w-full bg-black/50 p-4 rounded-md border border-gray-700">
+              <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-cyan-400 font-bold tracking-widest">PROMPT</h3>
+                  <button 
+                    onClick={handleCopyPrompt}
+                    className="flex-shrink-0 p-2 bg-gray-700/80 rounded-md hover:bg-cyan-500 hover:text-black transition-all duration-200 relative"
+                    aria-label="Copy prompt"
+                    title="Copy prompt"
+                  >
+                    <CopyIcon />
+                    {isCopied && (
+                        <div className="absolute -bottom-9 left-1/2 -translate-x-1/2 bg-cyan-500 text-black text-xs font-bold px-2 py-1 rounded-md animate-fade-in">
+                            Copied!
+                        </div>
+                    )}
+                  </button>
+              </div>
+              <p className="text-gray-300 text-sm font-mono max-h-48 overflow-y-auto break-words pr-2">
+                {prompt}
+              </p>
+          </div>
           <button
             onClick={handleDownload}
-            className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-black font-bold rounded-md hover:bg-cyan-400 hover:shadow-lg hover:shadow-cyan-500/50 transition-all duration-200"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-cyan-500 text-black font-bold rounded-md hover:bg-cyan-400 hover:shadow-lg hover:shadow-cyan-500/50 transition-all duration-200"
             aria-label="Download image"
           >
             <DownloadIcon />

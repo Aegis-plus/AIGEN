@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { HistoryItem, Model } from '../types';
 import { TrashIcon } from './icons';
@@ -5,7 +6,7 @@ import { TrashIcon } from './icons';
 interface HistoryGalleryProps {
   history: HistoryItem[];
   models: Model[];
-  onImageClick: (url: string) => void;
+  onImageClick: (url: string, prompt: string) => void;
   onClearHistory: () => void;
 }
 
@@ -36,9 +37,9 @@ export const HistoryGallery: React.FC<HistoryGalleryProps> = ({ history, models,
           <div
             key={item.createdAt}
             className="group relative aspect-square cursor-pointer overflow-hidden rounded-md border-2 border-transparent focus-within:border-cyan-500 hover:border-cyan-500 transition-all duration-300"
-            onClick={() => onImageClick(item.imageUrl)}
+            onClick={() => onImageClick(item.imageUrl, item.prompt)}
             tabIndex={0}
-            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onImageClick(item.imageUrl)}
+            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onImageClick(item.imageUrl, item.prompt)}
             role="button"
             aria-label={`View image generated with prompt: ${item.prompt}`}
           >

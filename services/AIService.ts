@@ -15,10 +15,17 @@ export const generateImage = async (prompt: string, model: Model): Promise<strin
   
   try {
     const client = createClient(model.provider);
-    const response = await client.images.generate({
+    
+    const generationOptions: { model: string; prompt: string; response_format?: string } = {
       model: model.id,
       prompt: prompt,
-    });
+    };
+
+    if (model.provider === 'api.airforce') {
+      generationOptions.response_format = 'b64_json';
+    }
+
+    const response = await client.images.generate(generationOptions);
 
     if (response.data && response.data.length > 0) {
       const firstResult = response.data[0];
