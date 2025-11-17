@@ -63,7 +63,7 @@ export const FullScreenImageViewer: React.FC<FullScreenImageViewerProps> = ({ im
       onClick={onClose}
     >
       <div 
-        className="relative max-w-7xl w-full h-full lg:h-auto lg:max-h-[85vh] flex flex-col lg:flex-row items-center lg:items-start gap-4 lg:gap-8"
+        className="relative max-w-7xl w-full h-full lg:h-auto lg:max-h-[85vh] flex flex-col lg:flex-row items-center lg:items-stretch gap-4 lg:gap-8"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Image Column */}

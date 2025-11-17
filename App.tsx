@@ -5,9 +5,10 @@ import { PromptInput } from './components/PromptInput';
 import { ImageDisplay } from './components/ImageDisplay';
 import { generateImage } from './services/AIService';
 import { ModelSelector } from './components/ModelSelector';
-import { Model, HistoryItem } from './types';
+import { Model, HistoryItem, AspectRatio } from './types';
 import { FullScreenImageViewer } from './components/FullScreenImageViewer';
 import { HistoryGallery } from './components/HistoryGallery';
+import { AspectRatioSelector } from './components/AspectRatioSelector';
 
 const ALL_MODELS: Model[] = [
   { id: '@cf/leonardo/lucid-origin', provider: 'worker', name: 'Lucid Origin' },
@@ -26,6 +27,7 @@ const App: React.FC = () => {
 
   // Model selection state
   const [selectedModelId, setSelectedModelId] = useState<string>(ALL_MODELS[0].id);
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>('square');
 
   // Cooldown state
   const [airforceCooldownUntil, setAirforceCooldownUntil] = useState<number | null>(null);
@@ -97,6 +99,15 @@ const App: React.FC = () => {
     return () => clearInterval(intervalId);
   }, [airforceCooldownUntil]);
 
+  // Automatically adjust settings based on the selected model
+  useEffect(() => {
+    const currentModel = ALL_MODELS.find(m => m.id === selectedModelId);
+    // For any provider other than 'worker', force square aspect ratio as others are unreliable.
+    if (currentModel?.provider !== 'worker') {
+      setAspectRatio('square');
+    }
+  }, [selectedModelId]);
+
   const handleGenerate = useCallback(async () => {
     if (!prompt.trim()) {
       setError('Please enter a prompt.');
@@ -127,7 +138,7 @@ const App: React.FC = () => {
     }
 
     try {
-      const generatedImageUrl = await generateImage(prompt, selectedModel);
+      const generatedImageUrl = await generateImage(prompt, selectedModel, aspectRatio);
       setImageUrl(generatedImageUrl);
 
       // Add to history
@@ -144,7 +155,7 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [prompt, selectedModelId, airforceCooldownUntil]);
+  }, [prompt, selectedModelId, airforceCooldownUntil, aspectRatio]);
 
   const openFullScreen = (imageUrl: string, prompt: string) => {
     setFullScreenData({ imageUrl, prompt });
@@ -160,6 +171,7 @@ const App: React.FC = () => {
 
   const selectedModel = ALL_MODELS.find(m => m.id === selectedModelId);
   const isAirforceModelSelected = selectedModel?.provider === 'api.airforce';
+  const isWorkerModelSelected = selectedModel?.provider === 'worker';
   const isGenerateDisabled = isLoading || (isAirforceModelSelected && countdown > 0);
 
   const getButtonText = () => {
@@ -206,13 +218,20 @@ const App: React.FC = () => {
             isLoading={isLoading}
             isSubmitDisabled={isGenerateDisabled}
           />
-          <div className="flex items-stretch gap-2">
+          <div className="flex flex-wrap items-stretch gap-2">
             <ModelSelector
               model={selectedModelId}
               setModel={setSelectedModelId}
               isLoading={isLoading}
               models={ALL_MODELS}
             />
+            {isWorkerModelSelected && (
+              <AspectRatioSelector
+                selectedRatio={aspectRatio}
+                onRatioChange={setAspectRatio}
+                isDisabled={isLoading}
+              />
+            )}
             <button
               onClick={handleGenerate}
               disabled={isGenerateDisabled || !prompt.trim()}
@@ -221,6 +240,11 @@ const App: React.FC = () => {
               <span>{getButtonText()}</span>
             </button>
           </div>
+          {!isWorkerModelSelected && (
+            <p className="text-center text-xs text-yellow-400/80 -mt-2">
+                Note: Aspect ratio selection is only available for Worker models.
+            </p>
+          )}
           <div className="text-center text-xs text-gray-500 pt-1">
             <span>Made by <a href="http://www.aegis.zone.id" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition-colors">AEGIS+</a></span>
             <span className="mx-2">|</span>

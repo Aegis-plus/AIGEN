@@ -1,4 +1,6 @@
 
+export type AspectRatio = 'square' | 'portrait' | 'landscape' | 'portrait-tall' | 'landscape-wide';
+
 export type Model = {
   id: string;
   provider: string;

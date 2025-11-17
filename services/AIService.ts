@@ -1,14 +1,24 @@
+
 // @ts-ignore
 import { createClient } from 'https://g4f.dev/dist/js/providers.js';
-import { Model } from '../types';
+import { Model, AspectRatio } from '../types';
+
+const DIMENSIONS: Record<AspectRatio, { width: number, height: number }> = {
+  square: { width: 1024, height: 1024 },
+  portrait: { width: 768, height: 1024 },
+  landscape: { width: 1024, height: 768 },
+  'portrait-tall': { width: 576, height: 1024 },
+  'landscape-wide': { width: 1024, height: 576 },
+};
 
 /**
  * Generates an image using a selected provider and model from the g4f API.
  * @param prompt The text prompt to generate an image from.
  * @param model The model object containing id and provider.
+ * @param aspectRatio The desired aspect ratio for the image.
  * @returns A URL of the generated image.
  */
-export const generateImage = async (prompt: string, model: Model): Promise<string> => {
+export const generateImage = async (prompt: string, model: Model, aspectRatio: AspectRatio): Promise<string> => {
   if (!model) {
     throw new Error("Model must be selected.");
   }
@@ -16,10 +26,29 @@ export const generateImage = async (prompt: string, model: Model): Promise<strin
   try {
     const client = createClient(model.provider);
     
-    const generationOptions: { model: string; prompt: string; response_format?: string } = {
+    // The aspectRatio is guaranteed to be 'square' for non-worker models by the App component.
+    const dimensions = DIMENSIONS[aspectRatio];
+    
+    const generationOptions: { 
+      model: string; 
+      prompt: string; 
+      response_format?: string;
+      width?: number;
+      height?: number;
+      size?: string;
+    } = {
       model: model.id,
       prompt: prompt,
     };
+    
+    if (model.provider === 'deep-infra') {
+      // Seedream uses the 'size' parameter.
+      generationOptions.size = `${dimensions.width}x${dimensions.height}`;
+    } else {
+      // Other providers like 'worker' and 'api.airforce' use width/height.
+      generationOptions.width = dimensions.width;
+      generationOptions.height = dimensions.height;
+    }
 
     if (model.provider === 'api.airforce') {
       generationOptions.response_format = 'b64_json';
