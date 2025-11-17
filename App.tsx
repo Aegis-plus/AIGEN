@@ -209,8 +209,8 @@ const App: React.FC = () => {
           />
         </div>
       </main>
-      <footer className="w-full p-4 sticky bottom-0 bg-[#0D1117]/80 backdrop-blur-sm border-t border-cyan-500/20">
-        <div className="max-w-4xl mx-auto flex flex-col gap-3">
+      <footer className="w-full p-2 sticky bottom-0 bg-[#0D1117]/80 backdrop-blur-sm border-t border-cyan-500/20">
+        <div className="max-w-4xl mx-auto flex flex-col gap-2">
           <PromptInput
             prompt={prompt}
             setPrompt={setPrompt}
@@ -241,7 +241,7 @@ const App: React.FC = () => {
             </button>
           </div>
           {!isWorkerModelSelected && (
-            <p className="text-center text-xs text-yellow-400/80 -mt-2">
+            <p className="text-center text-xs text-yellow-400/80 mt-1">
                 Note: Aspect ratio selection is only available for Worker models.
             </p>
           )}
