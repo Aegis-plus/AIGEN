@@ -19,7 +19,7 @@ const ALL_MODELS: Model[] = [
 ];
 
 const ITEMS_PER_PAGE = 10;
-const MAX_HISTORY_ITEMS = 50; // Cap history to prevent localStorage quota errors
+const MAX_HISTORY_ITEMS = 200; // Cap history to prevent localStorage quota errors
 
 const App: React.FC = () => {
   // Image generation state
