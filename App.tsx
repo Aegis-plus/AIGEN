@@ -18,6 +18,8 @@ const ALL_MODELS: Model[] = [
   { id: 'ByteDance/Seedream-4', provider: 'deep-infra', name: 'Seedream 4 (ByteDance)' },
 ];
 
+const ITEMS_PER_PAGE = 10;
+
 const App: React.FC = () => {
   // Image generation state
   const [prompt, setPrompt] = useState<string>('');
@@ -35,6 +37,7 @@ const App: React.FC = () => {
 
   // History state
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [historyPage, setHistoryPage] = useState<number>(1);
 
   // Full screen state
   const [fullScreenData, setFullScreenData] = useState<{imageUrl: string, prompt: string} | null>(null);
@@ -63,7 +66,7 @@ const App: React.FC = () => {
       console.error('Failed to save history to localStorage:', error);
     }
   }, [history]);
-
+  
   // Save prompt to localStorage whenever it changes
   useEffect(() => {
     try {
@@ -108,6 +111,14 @@ const App: React.FC = () => {
     }
   }, [selectedModelId]);
 
+  // Adjust history page if it goes out of bounds
+  useEffect(() => {
+    const totalPages = Math.ceil(history.length / ITEMS_PER_PAGE);
+    if (historyPage > totalPages && totalPages > 0) {
+      setHistoryPage(totalPages);
+    }
+  }, [history, historyPage]);
+
   const handleGenerate = useCallback(async () => {
     if (!prompt.trim()) {
       setError('Please enter a prompt.');
@@ -149,6 +160,7 @@ const App: React.FC = () => {
         createdAt: Date.now(),
       };
       setHistory(prev => [newHistoryItem, ...prev]);
+      setHistoryPage(1); // Go to first page to show the new item
 
     } catch (err: any)      {
       setError(err.message || 'An unexpected error occurred. Please try again.');
@@ -167,6 +179,7 @@ const App: React.FC = () => {
 
   const handleClearHistory = () => {
     setHistory([]);
+    setHistoryPage(1);
   };
 
   const selectedModel = ALL_MODELS.find(m => m.id === selectedModelId);
@@ -179,6 +192,12 @@ const App: React.FC = () => {
     if (isAirforceModelSelected && countdown > 0) return `RECHARGING (${countdown}s)`;
     return 'GENERATE';
   };
+  
+  const totalHistoryPages = Math.ceil(history.length / ITEMS_PER_PAGE);
+  const paginatedHistory = history.slice(
+    (historyPage - 1) * ITEMS_PER_PAGE,
+    historyPage * ITEMS_PER_PAGE
+  );
 
   return (
     <div className="min-h-screen bg-[#0D1117] text-gray-200 flex flex-col font-mono">
@@ -201,12 +220,17 @@ const App: React.FC = () => {
             onImageClick={(url) => openFullScreen(url, prompt)}
           />
 
-          <HistoryGallery
-            history={history}
-            models={ALL_MODELS}
-            onImageClick={openFullScreen}
-            onClearHistory={handleClearHistory}
-          />
+          {history.length > 0 && (
+            <HistoryGallery
+              history={paginatedHistory}
+              models={ALL_MODELS}
+              onImageClick={openFullScreen}
+              onClearHistory={handleClearHistory}
+              currentPage={historyPage}
+              totalPages={totalHistoryPages}
+              onPageChange={setHistoryPage}
+            />
+          )}
         </div>
       </main>
       <footer className="w-full p-2 sticky bottom-0 bg-[#0D1117]/80 backdrop-blur-sm border-t border-cyan-500/20">

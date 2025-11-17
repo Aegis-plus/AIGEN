@@ -1,19 +1,19 @@
 
 import React from 'react';
 import { HistoryItem, Model } from '../types';
-import { TrashIcon } from './icons';
+import { TrashIcon, ChevronLeftIcon, ChevronRightIcon } from './icons';
 
 interface HistoryGalleryProps {
   history: HistoryItem[];
   models: Model[];
   onImageClick: (url: string, prompt: string) => void;
   onClearHistory: () => void;
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
 }
 
-export const HistoryGallery: React.FC<HistoryGalleryProps> = ({ history, models, onImageClick, onClearHistory }) => {
-  if (history.length === 0) {
-    return null;
-  }
+export const HistoryGallery: React.FC<HistoryGalleryProps> = ({ history, models, onImageClick, onClearHistory, currentPage, totalPages, onPageChange }) => {
 
   const getModelName = (modelId: string): string => {
     return models.find(m => m.id === modelId)?.name || 'Unknown Model';
@@ -56,6 +56,29 @@ export const HistoryGallery: React.FC<HistoryGalleryProps> = ({ history, models,
           </div>
         ))}
       </div>
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-4 mt-6">
+          <button
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="p-2 bg-black/50 border-2 border-gray-700 rounded-full hover:border-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-700 transition-colors text-gray-300"
+            aria-label="Previous page"
+          >
+            <ChevronLeftIcon />
+          </button>
+          <span className="text-gray-400 font-mono text-sm tracking-widest">
+            {currentPage} / {totalPages}
+          </span>
+          <button
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="p-2 bg-black/50 border-2 border-gray-700 rounded-full hover:border-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-700 transition-colors text-gray-300"
+            aria-label="Next page"
+          >
+            <ChevronRightIcon />
+          </button>
+        </div>
+      )}
     </div>
   );
 };
