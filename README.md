@@ -1,4 +1,4 @@
-# IMAGEN-free
+# AIGEN-free
 ## SYNTHESIZE REALITY
 Input data stream. Generate visual output.
 
