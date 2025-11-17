@@ -11,11 +11,11 @@ import { HistoryGallery } from './components/HistoryGallery';
 import { AspectRatioSelector } from './components/AspectRatioSelector';
 
 const ALL_MODELS: Model[] = [
-  { id: '@cf/leonardo/lucid-origin', provider: 'worker', name: 'Lucid Origin' },
-  { id: '@cf/leonardo/phoenix-1.0', provider: 'worker', name: 'Phoenix 1.0' },
-  { id: 'imagen-3', provider: 'api.airforce', name: 'Imagen 3' },
-  { id: 'imagen-4', provider: 'api.airforce', name: 'Imagen 4' },
-  { id: 'ByteDance/Seedream-4', provider: 'deep-infra', name: 'Seedream 4' },
+  { id: '@cf/leonardo/lucid-origin', provider: 'worker', name: 'Lucid Origin (Leonardo)' },
+  { id: '@cf/leonardo/phoenix-1.0', provider: 'worker', name: 'Phoenix 1.0 (Leonardo)' },
+  { id: 'imagen-3', provider: 'api.airforce', name: 'Imagen 3 (Google)' },
+  { id: 'imagen-4', provider: 'api.airforce', name: 'Imagen 4 (Google)' },
+  { id: 'ByteDance/Seedream-4', provider: 'deep-infra', name: 'Seedream 4 (ByteDance)' },
 ];
 
 const App: React.FC = () => {
@@ -242,7 +242,7 @@ const App: React.FC = () => {
           </div>
           {!isWorkerModelSelected && (
             <p className="text-center text-xs text-yellow-400/80 mt-1">
-                Note: Aspect ratio selection is only available for Worker models.
+                Note: Aspect ratio selection is only available for Leonardo models.
             </p>
           )}
           <div className="text-center text-xs text-gray-500 pt-1">
