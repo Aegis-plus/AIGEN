@@ -155,43 +155,40 @@ const App: React.FC = () => {
     }
 
     try {
+      // 1. Generate the image from the selected AI service.
       const result = await generateImage(prompt, selectedModel, aspectRatio);
       
-      const displayUrl = result.type === 'b64_json'
-        ? `data:image/png;base64,${result.data}`
-        : result.data;
-
       const baseHistoryItem = {
         prompt,
         modelId: selectedModel.id,
         createdAt: Date.now(),
       };
 
-      if (selectedModel.id === 'ByteDance/Seedream-4') {
-        // For Seedream, add to history immediately without hosting.
-        const newHistoryItem: HistoryItem = { ...baseHistoryItem };
-        if (result.type === 'url') {
-          newHistoryItem.hostedUrl = result.data;
-        } else {
-          // If it's base64, save it in the source field for local display.
-          newHistoryItem.source = result;
-        }
-        updateAndSaveHistory([newHistoryItem, ...history]);
-        setImageUrl(getDisplayUrl(newHistoryItem));
-        setHistoryPage(1);
+      let finalUrl: string;
+
+      // 2. Determine if the image needs to be hosted.
+      // Always host b64 data. Only skip hosting for Seedream's direct URLs.
+      const needsHosting = result.type === 'b64_json' || 
+                           (result.type === 'url' && selectedModel.id !== 'ByteDance/Seedream-4');
+      
+      if (needsHosting) {
+        finalUrl = await hostImage(result);
       } else {
-        // For all other models, host the image first before adding to history.
-        const hostedUrl = await hostImage(result);
-        
-        const newHistoryItem: HistoryItem = {
-          ...baseHistoryItem,
-          hostedUrl: hostedUrl, // Only store the final, hosted URL
-        };
-        
-        updateAndSaveHistory([newHistoryItem, ...history]);
-        setImageUrl(getDisplayUrl(newHistoryItem));
-        setHistoryPage(1);
+        // This case is for Seedream's direct URL, which doesn't need re-hosting.
+        finalUrl = result.data;
       }
+
+      // 3. Create a new history item with the final, permanent URL.
+      const newHistoryItem: HistoryItem = {
+        ...baseHistoryItem,
+        hostedUrl: finalUrl,
+      };
+      
+      // 4. Update the history state and localStorage. This never stores large data.
+      updateAndSaveHistory([newHistoryItem, ...history]);
+      setImageUrl(getDisplayUrl(newHistoryItem));
+      setHistoryPage(1);
+
     } catch (err: any)      {
       setError(err.message || 'An unexpected error occurred. Please try again.');
     } finally {
@@ -251,10 +248,6 @@ const App: React.FC = () => {
   };
   
   const totalHistoryPages = Math.ceil(history.length / ITEMS_PER_PAGE);
-  const paginatedHistory = history.slice(
-    (historyPage - 1) * ITEMS_PER_PAGE,
-    historyPage * ITEMS_PER_PAGE
-  );
 
   const fullScreenHistoryItem = fullScreenHistoryId
     ? history.find(item => item.createdAt === fullScreenHistoryId)
@@ -331,7 +324,7 @@ const App: React.FC = () => {
 
           {history.length > 0 && (
             <HistoryGallery
-              history={paginatedHistory}
+              history={history}
               models={ALL_MODELS}
               onImageClick={openFullScreen}
               onClearHistory={handleClearHistory}

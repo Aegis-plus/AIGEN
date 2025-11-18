@@ -11,10 +11,5 @@ export type HistoryItem = {
   createdAt: number; // Use as unique ID
   prompt: string;
   modelId: string;
-  
-  hostedUrl?: string;
-  source?: {
-    type: 'url' | 'b64_json';
-    data: string;
-  };
+  hostedUrl?: string; // All new items will have a hosted URL. Optional for backward compatibility.
 };

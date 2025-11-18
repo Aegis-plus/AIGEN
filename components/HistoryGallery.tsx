@@ -3,6 +3,7 @@ import React from 'react';
 import { HistoryItem, Model } from '../types';
 import { TrashIcon, ChevronLeftIcon, ChevronRightIcon } from './icons';
 import { getDisplayUrl } from '../utils/helpers';
+import { ITEMS_PER_PAGE } from '../services/historyService';
 
 interface HistoryGalleryProps {
   history: HistoryItem[];
@@ -20,6 +21,9 @@ export const HistoryGallery: React.FC<HistoryGalleryProps> = ({ history, models,
     return models.find(m => m.id === modelId)?.name || 'Unknown Model';
   };
 
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+
   return (
     <div className="w-full max-w-4xl animate-fade-in">
       <div className="flex justify-between items-center mb-4">
@@ -34,14 +38,18 @@ export const HistoryGallery: React.FC<HistoryGalleryProps> = ({ history, models,
         </button>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-        {history.map((item) => {
+        {history.map((item, index) => {
           const displayUrl = getDisplayUrl(item);
+          const isVisible = index >= startIndex && index < endIndex;
+
           return (
             <div
               key={item.createdAt}
+              style={{ display: isVisible ? undefined : 'none' }}
+              aria-hidden={!isVisible}
               className="group relative aspect-square cursor-pointer overflow-hidden rounded-md border-2 border-transparent focus-within:border-cyan-500 hover:border-cyan-500 transition-all duration-300"
               onClick={() => onImageClick(item.createdAt)}
-              tabIndex={0}
+              tabIndex={isVisible ? 0 : -1}
               onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onImageClick(item.createdAt)}
               role="button"
               aria-label={`View image generated with prompt: ${item.prompt}`}
