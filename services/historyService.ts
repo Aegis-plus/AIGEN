@@ -1,8 +1,7 @@
-
 import { HistoryItem } from '../types';
 
 export const ITEMS_PER_PAGE = 10;
-export const MAX_HISTORY_ITEMS = 50;
+export const MAX_HISTORY_ITEMS = 200;
 
 const HISTORY_STORAGE_KEY = 'generationHistory';
 
