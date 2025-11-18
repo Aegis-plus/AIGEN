@@ -28,6 +28,73 @@ function b64toBlob(b64Data: string, contentType = 'image/png', sliceSize = 512):
   return new Blob(byteArrays, { type: contentType });
 }
 
+const MIME_EXTENSION_MAP: Record<string, string> = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/jpg': 'jpg',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+};
+
+function normalizeMimeType(mimeType?: string | null): string | null {
+  if (!mimeType) {
+    return null;
+  }
+  const [type] = mimeType.split(';');
+  const trimmed = type?.trim().toLowerCase();
+  return trimmed && trimmed.length > 0 ? trimmed : null;
+}
+
+function getFileExtensionFromMimeType(mimeType?: string | null): string {
+  const normalized = normalizeMimeType(mimeType);
+  if (!normalized) {
+    return 'png';
+  }
+  const mappedExtension = MIME_EXTENSION_MAP[normalized];
+  if (mappedExtension) {
+    return mappedExtension;
+  }
+  if (normalized.includes('/')) {
+    const [, suffixRaw] = normalized.split('/');
+    if (suffixRaw) {
+      const suffix = suffixRaw.split('+')[0];
+      if (suffix === 'jpeg') {
+        return 'jpg';
+      }
+      return suffix;
+    }
+  }
+  return 'png';
+}
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+async function downloadImageAsBase64(url: string): Promise<{ base64: string; mimeType: string | null }> {
+  try {
+    const response = await fetch(url, { referrerPolicy: 'no-referrer' });
+    if (!response.ok) {
+      throw new Error(`Download failed with status ${response.status}`);
+    }
+    const mimeType = normalizeMimeType(response.headers.get('content-type'));
+    const buffer = await response.arrayBuffer();
+    const base64 = arrayBufferToBase64(buffer);
+    return { base64, mimeType };
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Failed to download image for hosting: ${error.message}`);
+    }
+    throw new Error('Failed to download image for hosting.');
+  }
+}
+
 /**
  * Registers a new user with anondrop.net and returns the user key.
  * NOTE: This function relies on parsing the HTML response, which is fragile.
@@ -99,14 +166,24 @@ async function pollForFileAndGetUrl(key: string, filename: string): Promise<stri
 /**
  * Uploads a base64 image to anondrop.net and returns the public URL.
  * @param b64_json The base64 encoded image data.
+ * @param options Optional configuration for mime type and file extension hints.
  * @returns The public URL of the uploaded image.
  */
-async function uploadB64ImageAndGetUrl(b64_json: string): Promise<string> {
+async function uploadB64ImageAndGetUrl(
+  b64_json: string,
+  options?: { mimeType?: string; fileExtension?: string }
+): Promise<string> {
   try {
     const key = await ensureAnondropUserKey();
-    const blob = b64toBlob(b64_json);
-    const filename = `aigen-${Date.now()}.png`;
-    const file = new File([blob], filename, { type: 'image/png' });
+    const normalizedMimeType = normalizeMimeType(options?.mimeType);
+    const mimeType = normalizedMimeType || 'image/png';
+    const sanitizedExtension = options?.fileExtension?.replace(/^\./, '').toLowerCase();
+    const fileExtension = sanitizedExtension && sanitizedExtension.length > 0
+      ? sanitizedExtension
+      : getFileExtensionFromMimeType(mimeType);
+    const filename = `aigen-${Date.now()}.${fileExtension}`;
+    const blob = b64toBlob(b64_json, mimeType);
+    const file = new File([blob], filename, { type: mimeType });
     
     const formData = new FormData();
     formData.append('file', file);
@@ -181,9 +258,28 @@ async function remoteUploadUrlAndGetUrl(url: string): Promise<string> {
 export const hostImage = async (source: { type: 'url', data: string } | { type: 'b64_json', data: string }): Promise<string> => {
     if (source.type === 'b64_json') {
         return uploadB64ImageAndGetUrl(source.data);
-    } else {
-        // It's a URL, use remote upload to bypass client-side CORS issues.
-        return remoteUploadUrlAndGetUrl(source.data);
+    }
+
+    try {
+        // Prefer remote uploads to avoid CORS when possible.
+        return await remoteUploadUrlAndGetUrl(source.data);
+    } catch (remoteError) {
+        console.warn('Remote upload failed, attempting client-side download and upload.', remoteError);
+        try {
+            const { base64, mimeType } = await downloadImageAsBase64(source.data);
+            return await uploadB64ImageAndGetUrl(base64, {
+                mimeType: mimeType ?? undefined,
+            });
+        } catch (fallbackError) {
+            console.error('Fallback upload after remote failure also failed:', fallbackError);
+            if (fallbackError instanceof Error) {
+                if (fallbackError.message.startsWith('Image hosting service error')) {
+                    throw fallbackError;
+                }
+                throw new Error(`Image hosting service error: ${fallbackError.message}`);
+            }
+            throw new Error('Image hosting service error: An unknown error occurred while hosting the image.');
+        }
     }
 };
 

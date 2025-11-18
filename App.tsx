@@ -164,19 +164,8 @@ const App: React.FC = () => {
         createdAt: Date.now(),
       };
 
-      let finalUrl: string;
-
-      // 2. Determine if the image needs to be hosted.
-      // Always host b64 data. Only skip hosting for Seedream's direct URLs.
-      const needsHosting = result.type === 'b64_json' || 
-                           (result.type === 'url' && selectedModel.id !== 'ByteDance/Seedream-4');
-      
-      if (needsHosting) {
-        finalUrl = await hostImage(result);
-      } else {
-        // This case is for Seedream's direct URL, which doesn't need re-hosting.
-        finalUrl = result.data;
-      }
+      // 2. Host the image so we have a stable public URL.
+      const finalUrl = await hostImage(result);
 
       // 3. Create a new history item with the final, permanent URL.
       const newHistoryItem: HistoryItem = {
