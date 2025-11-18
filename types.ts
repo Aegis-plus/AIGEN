@@ -8,8 +8,13 @@ export type Model = {
 };
 
 export type HistoryItem = {
-  imageUrl: string;
+  createdAt: number; // Use as unique ID
   prompt: string;
   modelId: string;
-  createdAt: number;
+  
+  hostedUrl?: string;
+  source?: {
+    type: 'url' | 'b64_json';
+    data: string;
+  };
 };

@@ -1,15 +1,29 @@
 
 import React, { useState } from 'react';
-import { CloseIcon, DownloadIcon, CopyIcon } from './icons';
+import { CloseIcon, DownloadIcon, CopyIcon, ChevronLeftIcon, ChevronRightIcon } from './icons';
+import { HistoryItem, Model } from '../types';
+import { getDisplayUrl } from '../utils/helpers';
 
 interface FullScreenImageViewerProps {
-  imageUrl: string;
-  prompt: string;
+  historyItem: HistoryItem;
+  history: HistoryItem[];
+  models: Model[];
   onClose: () => void;
+  onNavigate: (direction: 'prev' | 'next') => void;
 }
 
-export const FullScreenImageViewer: React.FC<FullScreenImageViewerProps> = ({ imageUrl, prompt, onClose }) => {
+export const FullScreenImageViewer: React.FC<FullScreenImageViewerProps> = ({ historyItem, history, models, onClose, onNavigate }) => {
   const [isCopied, setIsCopied] = useState(false);
+
+  const { prompt, createdAt, modelId } = historyItem;
+  const imageUrl = getDisplayUrl(historyItem);
+
+  const model = models.find(m => m.id === modelId);
+  const creationDate = new Date(createdAt).toLocaleString();
+
+  const currentIndex = history.findIndex(item => item.createdAt === createdAt);
+  const canGoPrev = currentIndex > 0;
+  const canGoNext = currentIndex < history.length - 1;
 
   const handleDownload = async () => {
     try {
@@ -47,6 +61,10 @@ export const FullScreenImageViewer: React.FC<FullScreenImageViewerProps> = ({ im
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
+      } else if (e.key === 'ArrowLeft' && canGoPrev) {
+        onNavigate('prev');
+      } else if (e.key === 'ArrowRight' && canGoNext) {
+        onNavigate('next');
       }
     };
     document.body.style.overflow = 'hidden';
@@ -55,19 +73,30 @@ export const FullScreenImageViewer: React.FC<FullScreenImageViewerProps> = ({ im
       document.body.style.overflow = 'auto';
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onClose]);
+  }, [onClose, onNavigate, canGoPrev, canGoNext]);
 
   return (
     <div 
-      className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 animate-fade-in"
+      className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 animate-fade-in overflow-y-auto"
       onClick={onClose}
     >
+      {/* Prev Button */}
+      {canGoPrev && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onNavigate('prev'); }}
+          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/50 text-white hover:bg-black/75 hover:scale-110 transition-all"
+          aria-label="Previous image"
+        >
+          <ChevronLeftIcon />
+        </button>
+      )}
+
       <div 
-        className="relative max-w-7xl w-full h-full lg:h-auto lg:max-h-[85vh] flex flex-col lg:flex-row items-center lg:items-stretch gap-4 lg:gap-8"
+        className="relative max-w-7xl w-full my-auto lg:max-h-[85vh] flex flex-col lg:flex-row items-center lg:items-stretch gap-4 lg:gap-8"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Image Column */}
-        <div className="flex-1 flex items-center justify-center w-full h-full lg:h-auto">
+        <div className="flex-1 flex items-center justify-center w-full">
           <img 
             src={imageUrl} 
             alt="Full screen AI generated" 
@@ -98,9 +127,24 @@ export const FullScreenImageViewer: React.FC<FullScreenImageViewerProps> = ({ im
                 {prompt}
               </p>
           </div>
+
+          <div className="w-full bg-black/50 p-4 rounded-md border border-gray-700">
+            <h3 className="text-cyan-400 font-bold tracking-widest mb-2">DETAILS</h3>
+            <div className="text-gray-300 text-sm font-mono space-y-2 break-words">
+              <div>
+                <strong className="font-bold text-gray-400">Model:</strong>
+                <p>{model?.name || 'Unknown'}</p>
+              </div>
+              <div>
+                <strong className="font-bold text-gray-400">Created:</strong>
+                <p>{creationDate}</p>
+              </div>
+            </div>
+          </div>
+          
           <button
             onClick={handleDownload}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-cyan-500 text-black font-bold rounded-md hover:bg-cyan-400 hover:shadow-lg hover:shadow-cyan-500/50 transition-all duration-200"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-cyan-500 text-black font-bold rounded-md hover:bg-cyan-400 hover:shadow-lg hover:shadow-cyan-500/50 transition-all duration-200 mt-auto"
             aria-label="Download image"
           >
             <DownloadIcon />
@@ -108,9 +152,21 @@ export const FullScreenImageViewer: React.FC<FullScreenImageViewerProps> = ({ im
           </button>
         </div>
       </div>
+
+      {/* Next Button */}
+      {canGoNext && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onNavigate('next'); }}
+          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/50 text-white hover:bg-black/75 hover:scale-110 transition-all"
+          aria-label="Next image"
+        >
+          <ChevronRightIcon />
+        </button>
+      )}
+
       <button 
         onClick={onClose}
-        className="absolute top-4 right-4 p-2 rounded-full bg-black/50 text-white hover:bg-black/75 hover:scale-110 transition-all"
+        className="absolute top-4 right-4 p-2 rounded-full bg-black/50 text-white hover:bg-black/75 hover:scale-110 transition-all z-20"
         aria-label="Close full screen view"
       >
         <CloseIcon size={28} />

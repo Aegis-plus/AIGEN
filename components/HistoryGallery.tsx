@@ -2,11 +2,12 @@
 import React from 'react';
 import { HistoryItem, Model } from '../types';
 import { TrashIcon, ChevronLeftIcon, ChevronRightIcon } from './icons';
+import { getDisplayUrl } from '../utils/helpers';
 
 interface HistoryGalleryProps {
   history: HistoryItem[];
   models: Model[];
-  onImageClick: (url: string, prompt: string) => void;
+  onImageClick: (createdAt: number) => void;
   onClearHistory: () => void;
   currentPage: number;
   totalPages: number;
@@ -33,28 +34,31 @@ export const HistoryGallery: React.FC<HistoryGalleryProps> = ({ history, models,
         </button>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-        {history.map((item) => (
-          <div
-            key={item.createdAt}
-            className="group relative aspect-square cursor-pointer overflow-hidden rounded-md border-2 border-transparent focus-within:border-cyan-500 hover:border-cyan-500 transition-all duration-300"
-            onClick={() => onImageClick(item.imageUrl, item.prompt)}
-            tabIndex={0}
-            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onImageClick(item.imageUrl, item.prompt)}
-            role="button"
-            aria-label={`View image generated with prompt: ${item.prompt}`}
-          >
-            <img
-              src={item.imageUrl}
-              alt={item.prompt}
-              loading="lazy"
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-2 flex flex-col justify-end text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <p className="font-bold truncate text-cyan-300" title={getModelName(item.modelId)}>{getModelName(item.modelId)}</p>
-              <p className="line-clamp-3 text-gray-300" title={item.prompt}>{item.prompt}</p>
+        {history.map((item) => {
+          const displayUrl = getDisplayUrl(item);
+          return (
+            <div
+              key={item.createdAt}
+              className="group relative aspect-square cursor-pointer overflow-hidden rounded-md border-2 border-transparent focus-within:border-cyan-500 hover:border-cyan-500 transition-all duration-300"
+              onClick={() => onImageClick(item.createdAt)}
+              tabIndex={0}
+              onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onImageClick(item.createdAt)}
+              role="button"
+              aria-label={`View image generated with prompt: ${item.prompt}`}
+            >
+              <img
+                src={displayUrl}
+                alt={item.prompt}
+                loading="lazy"
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-2 flex flex-col justify-end text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <p className="font-bold truncate text-cyan-300" title={getModelName(item.modelId)}>{getModelName(item.modelId)}</p>
+                <p className="line-clamp-3 text-gray-300" title={item.prompt}>{item.prompt}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       {totalPages > 1 && (
         <div className="flex justify-center items-center gap-4 mt-6">

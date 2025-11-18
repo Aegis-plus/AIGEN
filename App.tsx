@@ -3,12 +3,14 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Header } from './components/Header';
 import { PromptInput } from './components/PromptInput';
 import { ImageDisplay } from './components/ImageDisplay';
-import { generateImage } from './services/AIService';
+import { generateImage, hostImage } from './services/AIService';
 import { ModelSelector } from './components/ModelSelector';
 import { Model, HistoryItem, AspectRatio } from './types';
 import { FullScreenImageViewer } from './components/FullScreenImageViewer';
 import { HistoryGallery } from './components/HistoryGallery';
 import { AspectRatioSelector } from './components/AspectRatioSelector';
+import { loadHistoryFromStorage, saveHistoryToStorage, clearHistoryInStorage, ITEMS_PER_PAGE } from './services/historyService';
+import { getDisplayUrl } from './utils/helpers';
 
 const ALL_MODELS: Model[] = [
   { id: '@cf/leonardo/lucid-origin', provider: 'worker', name: 'Lucid Origin (Leonardo)' },
@@ -17,9 +19,6 @@ const ALL_MODELS: Model[] = [
   { id: 'imagen-4', provider: 'api.airforce', name: 'Imagen 4 (Google)' },
   { id: 'ByteDance/Seedream-4', provider: 'deep-infra', name: 'Seedream 4 (ByteDance)' },
 ];
-
-const ITEMS_PER_PAGE = 10;
-const MAX_HISTORY_ITEMS = 200; // Cap history to prevent localStorage quota errors
 
 const App: React.FC = () => {
   // Image generation state
@@ -42,76 +41,14 @@ const App: React.FC = () => {
   const [historyError, setHistoryError] = useState<string | null>(null);
 
   // Full screen state
-  const [fullScreenData, setFullScreenData] = useState<{imageUrl: string, prompt: string} | null>(null);
+  const [fullScreenHistoryId, setFullScreenHistoryId] = useState<number | null>(null);
 
   // Load history and prompt from localStorage on mount
   useEffect(() => {
-    try {
-      const savedHistory = localStorage.getItem('generationHistory');
-      if (savedHistory) {
-        setHistory(JSON.parse(savedHistory));
-      }
-      const savedPrompt = localStorage.getItem('lastPrompt');
-      if (savedPrompt) {
-        setPrompt(savedPrompt);
-      }
-    } catch (error) {
-      console.error('Failed to load state from localStorage:', error);
-      setHistoryError('Could not load history from storage.');
-    }
-  }, []);
-
-  const saveHistory = useCallback((newHistory: HistoryItem[]) => {
-    // Handle clearing history
-    if (newHistory.length === 0) {
-      try {
-        localStorage.setItem('generationHistory', '[]');
-        setHistory([]);
-        setHistoryError(null);
-      } catch (e) {
-        console.error('Failed to clear history in localStorage:', e);
-        setHistoryError('Could not clear history. Storage may be full or disabled.');
-        setTimeout(() => setHistoryError(null), 5000);
-      }
-      return;
-    }
-
-    // Handle adding items with pruning logic
-    let historyToSave = [...newHistory];
-    const originalLength = newHistory.length;
-
-    // Prune by item count first as a baseline
-    if (historyToSave.length > MAX_HISTORY_ITEMS) {
-      historyToSave = historyToSave.slice(0, MAX_HISTORY_ITEMS);
-    }
-
-    while (historyToSave.length > 0) {
-      try {
-        localStorage.setItem('generationHistory', JSON.stringify(historyToSave));
-        // Success
-        break;
-      } catch (error: any) {
-        if ((error.name === 'QuotaExceededError' || (error.code && (error.code === 22 || error.code === 1014)))) {
-          // Quota exceeded, remove the oldest item (which is at the end) and retry
-          historyToSave.pop();
-        } else {
-          console.error('Failed to save history to localStorage:', error);
-          setHistoryError('An unexpected error occurred while saving history.');
-          setTimeout(() => setHistoryError(null), 5000);
-          setHistory(newHistory); // Still update state with intended history
-          return;
-        }
-      }
-    }
-    
-    // After loop, update state with the final savable history
-    setHistory(historyToSave);
-
-    if (historyToSave.length < originalLength) {
-      setHistoryError('Storage limit reached. Oldest items were removed to make space.');
-      setTimeout(() => setHistoryError(null), 5000);
-    } else {
-      setHistoryError(null);
+    setHistory(loadHistoryFromStorage());
+    const savedPrompt = localStorage.getItem('lastPrompt');
+    if (savedPrompt) {
+      setPrompt(savedPrompt);
     }
   }, []);
   
@@ -126,6 +63,7 @@ const App: React.FC = () => {
     }
   }, [prompt]);
 
+  // Cooldown countdown timer effect
   useEffect(() => {
     if (!airforceCooldownUntil) {
         setCountdown(0);
@@ -169,6 +107,24 @@ const App: React.FC = () => {
     }
   }, [history, historyPage]);
 
+  const updateAndSaveHistory = useCallback((newHistory: HistoryItem[]) => {
+    try {
+      const originalLength = newHistory.length;
+      const savedHistory = saveHistoryToStorage(newHistory);
+      setHistory(savedHistory);
+      
+      if (savedHistory.length < originalLength) {
+        setHistoryError('Storage limit reached. Oldest items were removed to make space.');
+        setTimeout(() => setHistoryError(null), 5000);
+      } else {
+        setHistoryError(null);
+      }
+    } catch (e: any) {
+      setHistoryError(e.message || 'Could not save history.');
+      setTimeout(() => setHistoryError(null), 5000);
+    }
+  }, []);
+
   const handleGenerate = useCallback(async () => {
     if (!prompt.trim()) {
       setError('Please enter a prompt.');
@@ -199,37 +155,88 @@ const App: React.FC = () => {
     }
 
     try {
-      const generatedImageUrl = await generateImage(prompt, selectedModel, aspectRatio);
-      setImageUrl(generatedImageUrl);
+      const result = await generateImage(prompt, selectedModel, aspectRatio);
+      
+      const displayUrl = result.type === 'b64_json'
+        ? `data:image/png;base64,${result.data}`
+        : result.data;
 
-      const newHistoryItem: HistoryItem = {
-        imageUrl: generatedImageUrl,
+      const baseHistoryItem = {
         prompt,
         modelId: selectedModel.id,
         createdAt: Date.now(),
       };
-      
-      saveHistory([newHistoryItem, ...history]);
-      setHistoryPage(1); // Go to first page to show the new item
 
+      if (selectedModel.id === 'ByteDance/Seedream-4') {
+        // For Seedream, add to history immediately without hosting.
+        const newHistoryItem: HistoryItem = { ...baseHistoryItem };
+        if (result.type === 'url') {
+          newHistoryItem.hostedUrl = result.data;
+        } else {
+          // If it's base64, save it in the source field for local display.
+          newHistoryItem.source = result;
+        }
+        updateAndSaveHistory([newHistoryItem, ...history]);
+        setImageUrl(getDisplayUrl(newHistoryItem));
+        setHistoryPage(1);
+      } else {
+        // For all other models, host the image first before adding to history.
+        const hostedUrl = await hostImage(result);
+        
+        const newHistoryItem: HistoryItem = {
+          ...baseHistoryItem,
+          hostedUrl: hostedUrl, // Only store the final, hosted URL
+        };
+        
+        updateAndSaveHistory([newHistoryItem, ...history]);
+        setImageUrl(getDisplayUrl(newHistoryItem));
+        setHistoryPage(1);
+      }
     } catch (err: any)      {
       setError(err.message || 'An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
-  }, [prompt, selectedModelId, airforceCooldownUntil, aspectRatio, history, saveHistory]);
+  }, [prompt, selectedModelId, airforceCooldownUntil, aspectRatio, history, updateAndSaveHistory]);
 
-  const openFullScreen = (imageUrl: string, prompt: string) => {
-    setFullScreenData({ imageUrl, prompt });
+  const openFullScreen = (createdAt: number) => {
+    setFullScreenHistoryId(createdAt);
   };
 
   const closeFullScreen = () => {
-    setFullScreenData(null);
+    setFullScreenHistoryId(null);
+  };
+  
+  const handleFullScreenNavigate = (direction: 'prev' | 'next') => {
+    if (!fullScreenHistoryId) return;
+    
+    const currentIndex = history.findIndex(item => item.createdAt === fullScreenHistoryId);
+    if (currentIndex === -1) return;
+
+    let newIndex;
+    // History is sorted newest to oldest (0 is newest).
+    // 'prev' moves to a newer item (lower index).
+    // 'next' moves to an older item (higher index).
+    if (direction === 'next') {
+        newIndex = currentIndex + 1;
+    } else { // prev
+        newIndex = currentIndex - 1;
+    }
+
+    if (newIndex >= 0 && newIndex < history.length) {
+        setFullScreenHistoryId(history[newIndex].createdAt);
+    }
   };
 
   const handleClearHistory = () => {
-    saveHistory([]);
-    setHistoryPage(1);
+    try {
+      clearHistoryInStorage();
+      setHistory([]);
+      setHistoryPage(1);
+    } catch (e: any) {
+      setHistoryError(e.message || 'Could not clear history.');
+      setTimeout(() => setHistoryError(null), 5000);
+    }
   };
 
   const selectedModel = ALL_MODELS.find(m => m.id === selectedModelId);
@@ -249,6 +256,10 @@ const App: React.FC = () => {
     historyPage * ITEMS_PER_PAGE
   );
 
+  const fullScreenHistoryItem = fullScreenHistoryId
+    ? history.find(item => item.createdAt === fullScreenHistoryId)
+    : null;
+
   return (
     <div className="min-h-screen bg-[#0D1117] text-gray-200 flex flex-col font-mono">
       <Header />
@@ -267,7 +278,12 @@ const App: React.FC = () => {
             imageUrl={imageUrl}
             isLoading={isLoading}
             error={error}
-            onImageClick={(url) => openFullScreen(url, prompt)}
+            onImageClick={() => {
+              // The main display always shows the latest generated image, which is history[0].
+              if (history.length > 0) {
+                openFullScreen(history[0].createdAt);
+              }
+            }}
           />
 
           <div className="w-full flex flex-col gap-4">
@@ -308,7 +324,7 @@ const App: React.FC = () => {
           </div>
           
           {historyError && (
-            <div className="w-full text-center text-xs text-yellow-400/90 animate-fade-in p-2 bg-yellow-900/20 border border-yellow-500/30 rounded-md">
+            <div role="alert" aria-live="polite" className="w-full text-center text-xs text-yellow-400/90 animate-fade-in p-2 bg-yellow-900/20 border border-yellow-500/30 rounded-md">
               {historyError}
             </div>
           )}
@@ -333,11 +349,13 @@ const App: React.FC = () => {
           <span>Powered by <a href="https://g4f.dev" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition-colors">g4f.dev</a></span>
         </div>
       </footer>
-      {fullScreenData && (
+      {fullScreenHistoryItem && (
         <FullScreenImageViewer
-          imageUrl={fullScreenData.imageUrl}
-          prompt={fullScreenData.prompt}
+          historyItem={fullScreenHistoryItem}
+          history={history}
+          models={ALL_MODELS}
           onClose={closeFullScreen}
+          onNavigate={handleFullScreenNavigate}
         />
       )}
     </div>

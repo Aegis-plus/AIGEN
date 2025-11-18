@@ -4,7 +4,6 @@ import { PasteIcon } from './icons';
 
 interface PromptInputProps {
   prompt: string;
-  // FIX: Correctly type `setPrompt` to accept a value or an updater function.
   setPrompt: React.Dispatch<React.SetStateAction<string>>;
   onGenerate: () => void;
   isLoading: boolean;
