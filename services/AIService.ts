@@ -30,8 +30,6 @@ function b64toBlob(b64Data: string, contentType = 'image/png', sliceSize = 512):
 
 /**
  * Registers a new user with anondrop.net and returns the user key.
- * NOTE: This function relies on parsing the HTML response, which is fragile.
- * If anondrop.net changes its registration page, this will break.
  */
 async function registerAnondropUser(): Promise<string> {
   const response = await fetch(`${ANONDROP_BASE_URL}/register`);
@@ -97,17 +95,11 @@ async function pollForFileAndGetUrl(key: string, filename: string): Promise<stri
 }
 
 /**
- * Uploads a base64 image to anondrop.net and returns the public URL.
- * @param b64_json The base64 encoded image data.
- * @returns The public URL of the uploaded image.
+ * Core function to upload a File object to anondrop.net
  */
-async function uploadB64ImageAndGetUrl(b64_json: string): Promise<string> {
+async function uploadFileToAnondrop(file: File): Promise<string> {
   try {
     const key = await ensureAnondropUserKey();
-    const blob = b64toBlob(b64_json);
-    const filename = `aigen-${Date.now()}.png`;
-    const file = new File([blob], filename, { type: 'image/png' });
-    
     const formData = new FormData();
     formData.append('file', file);
     
@@ -126,12 +118,11 @@ async function uploadB64ImageAndGetUrl(b64_json: string): Promise<string> {
       throw new Error(`Image upload failed: ${errorText || uploadResponse.statusText}`);
     }
     
-    return await pollForFileAndGetUrl(key, filename);
+    return await pollForFileAndGetUrl(key, file.name);
     
   } catch (error) {
     console.error("Anondrop upload process failed:", error);
     if (error instanceof Error) {
-        // Re-throw with a more user-friendly prefix.
         throw new Error(`Image hosting service error: ${error.message}`);
     }
     throw new Error('An unknown error occurred with the image hosting service.');
@@ -139,9 +130,17 @@ async function uploadB64ImageAndGetUrl(b64_json: string): Promise<string> {
 }
 
 /**
+ * Uploads a base64 image to anondrop.net and returns the public URL.
+ */
+async function uploadB64ImageAndGetUrl(b64_json: string): Promise<string> {
+    const blob = b64toBlob(b64_json);
+    const filename = `aigen-${Date.now()}.png`;
+    const file = new File([blob], filename, { type: 'image/png' });
+    return uploadFileToAnondrop(file);
+}
+
+/**
  * Uploads an image from a URL to anondrop.net using their remote upload feature.
- * @param url The URL of the image to upload.
- * @returns The public URL of the uploaded image.
  */
 async function remoteUploadUrlAndGetUrl(url: string): Promise<string> {
   try {
@@ -165,25 +164,81 @@ async function remoteUploadUrlAndGetUrl(url: string): Promise<string> {
     return await pollForFileAndGetUrl(key, filename);
 
   } catch (error) {
-    console.error("Anondrop remote upload process failed:", error);
-    if (error instanceof Error) {
-        throw new Error(`Image hosting service error: ${error.message}`);
-    }
-    throw new Error('An unknown error occurred with the image hosting service.');
+    // Don't throw generic error here, let the caller handle logging so we can fallback
+    throw error;
   }
+}
+
+/**
+ * Downloads an image using a chain of CORS proxies and returns it as a File object.
+ * Used as a fallback when remote upload fails.
+ */
+async function downloadImageViaProxy(url: string): Promise<File> {
+    const filename = `aigen-${Date.now()}.png`;
+    
+    const tryFetch = async (proxyUrl: string) => {
+        const response = await fetch(proxyUrl);
+        if (!response.ok) throw new Error(`Status: ${response.status}`);
+        return await response.blob();
+    };
+
+    // Priority 1: wsrv.nl (Excellent for images, handles redirects and headers well)
+    try {
+        const blob = await tryFetch(`https://wsrv.nl/?url=${encodeURIComponent(url)}&output=png`);
+        return new File([blob], filename, { type: 'image/png' });
+    } catch (e) {
+        console.warn('wsrv.nl proxy failed', e);
+    }
+
+    // Priority 2: corsproxy.io (Good general purpose)
+    try {
+        const blob = await tryFetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
+        return new File([blob], filename, { type: blob.type || 'image/png' });
+    } catch (e) {
+        console.warn('corsproxy.io proxy failed', e);
+    }
+
+    // Priority 3: allorigins.win (Fallback)
+    try {
+         const blob = await tryFetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
+         return new File([blob], filename, { type: blob.type || 'image/png' });
+    } catch (e) {
+        console.warn('allorigins proxy failed', e);
+    }
+
+    throw new Error('All proxy download attempts failed.');
 }
 
 // --- End Anondrop.net Service ---
 
 /**
  * Hosts an image, either from a base64 source or a URL.
+ * Includes robust fallback logic for URLs that fail standard remote upload.
  */
 export const hostImage = async (source: { type: 'url', data: string } | { type: 'b64_json', data: string }): Promise<string> => {
     if (source.type === 'b64_json') {
         return uploadB64ImageAndGetUrl(source.data);
     } else {
-        // It's a URL, use remote upload to bypass client-side CORS issues.
-        return remoteUploadUrlAndGetUrl(source.data);
+        // It's a URL.
+        // Strategy 1: Try Remote Upload (Preferred, Server-to-Server)
+        try {
+             return await remoteUploadUrlAndGetUrl(source.data);
+        } catch (remoteError) {
+             console.warn('Remote upload failed. Attempting client-side proxy upload.', remoteError);
+             
+             // Strategy 2: Download via Proxy -> Upload as File
+             // This mimics a "backend server" approach by using the proxy to fetch the bytes.
+             try {
+                 const file = await downloadImageViaProxy(source.data);
+                 return await uploadFileToAnondrop(file);
+             } catch (proxyError) {
+                 console.error('Proxy upload also failed.', proxyError);
+                 // Throw a combined error to help debugging
+                 const rMsg = remoteError instanceof Error ? remoteError.message : 'Unknown remote error';
+                 const pMsg = proxyError instanceof Error ? proxyError.message : 'Unknown proxy error';
+                 throw new Error(`Hosting failed. Remote: ${rMsg}. Proxy: ${pMsg}`);
+             }
+        }
     }
 };
 
@@ -197,10 +252,6 @@ const DIMENSIONS: Record<AspectRatio, { width: number, height: number }> = {
 
 /**
  * Generates an image using a selected provider and model from the g4f API.
- * @param prompt The text prompt to generate an image from.
- * @param model The model object containing id and provider.
- * @param aspectRatio The desired aspect ratio for the image.
- * @returns The native result from the provider (either a URL or base64 JSON).
  */
 export const generateImage = async (prompt: string, model: Model, aspectRatio: AspectRatio): Promise<{ type: 'url', data: string } | { type: 'b64_json', data: string }> => {
   if (!model) {

@@ -164,27 +164,31 @@ const App: React.FC = () => {
         createdAt: Date.now(),
       };
 
+      // 2. Host the image.
+      // Use a separate try/catch so generation success isn't hidden by hosting failure.
       let finalUrl: string;
-
-      // 2. Determine if the image needs to be hosted.
-      // Always host b64 data. Only skip hosting for Seedream's direct URLs.
-      const needsHosting = result.type === 'b64_json' || 
-                           (result.type === 'url' && selectedModel.id !== 'ByteDance/Seedream-4');
-      
-      if (needsHosting) {
-        finalUrl = await hostImage(result);
-      } else {
-        // This case is for Seedream's direct URL, which doesn't need re-hosting.
-        finalUrl = result.data;
+      try {
+         finalUrl = await hostImage(result);
+      } catch (hostErr: any) {
+         console.warn("Hosting failed, using temp URL:", hostErr);
+         setHistoryError("Cloud upload failed. Image saved locally only.");
+         setTimeout(() => setHistoryError(null), 5000);
+         
+         // Fallback to using the generated data directly (Data URI or original URL)
+         if (result.type === 'url') {
+            finalUrl = result.data;
+         } else {
+            finalUrl = `data:image/png;base64,${result.data}`;
+         }
       }
 
-      // 3. Create a new history item with the final, permanent URL.
+      // 3. Create a new history item.
       const newHistoryItem: HistoryItem = {
         ...baseHistoryItem,
         hostedUrl: finalUrl,
       };
       
-      // 4. Update the history state and localStorage. This never stores large data.
+      // 4. Update the history state and localStorage.
       updateAndSaveHistory([newHistoryItem, ...history]);
       setImageUrl(getDisplayUrl(newHistoryItem));
       setHistoryPage(1);
