@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { LoadingSpinner, ErrorIcon, ImageIcon, FullScreenIcon } from './icons';
+import { LoadingSpinner, ErrorIcon, MagicWandIcon, FullScreenIcon, ArrowDownWideIcon } from './icons';
 
 interface ImageDisplayProps {
   imageUrl: string | null;
@@ -52,9 +52,22 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({ imageUrl, isLoading,
     }
     
     return (
-      <div className="flex flex-col items-center justify-center gap-4 text-subtext">
-        <ImageIcon />
-        <p className="text-sm font-medium tracking-wide">Awaiting Input</p>
+      <div className="flex flex-col items-center justify-center h-full w-full relative p-6 text-center select-none">
+        {/* Center Content */}
+        <div className="flex flex-col items-center gap-4 opacity-70">
+          <div className="p-4 rounded-full bg-surface1/20 text-primary mb-2">
+             <MagicWandIcon className="w-12 h-12 sm:w-16 sm:h-16" />
+          </div>
+          <h3 className="text-xl font-semibold text-text tracking-tight">Ready to Imagine?</h3>
+          <p className="text-sm text-subtext max-w-xs leading-relaxed font-light">
+             Enter a prompt below to bring your ideas to life.
+          </p>
+        </div>
+
+        {/* Bottom Arrow */}
+        <div className="absolute bottom-6 flex flex-col items-center animate-bounce text-subtext opacity-60">
+            <ArrowDownWideIcon className="w-6 h-6" />
+        </div>
       </div>
     );
   };
