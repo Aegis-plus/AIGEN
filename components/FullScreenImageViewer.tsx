@@ -77,14 +77,14 @@ export const FullScreenImageViewer: React.FC<FullScreenImageViewerProps> = ({ hi
 
   return (
     <div 
-      className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 animate-fade-in overflow-y-auto"
+      className="fixed inset-0 bg-base/95 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in overflow-y-auto"
       onClick={onClose}
     >
       {/* Prev Button */}
       {canGoPrev && (
         <button
           onClick={(e) => { e.stopPropagation(); onNavigate('prev'); }}
-          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/50 text-white hover:bg-black/75 hover:scale-110 transition-all"
+          className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-surface0/50 text-text hover:bg-surface1 hover:scale-105 transition-all shadow-sm"
           aria-label="Previous image"
         >
           <ChevronLeftIcon />
@@ -92,59 +92,56 @@ export const FullScreenImageViewer: React.FC<FullScreenImageViewerProps> = ({ hi
       )}
 
       <div 
-        className="relative max-w-7xl w-full my-auto lg:max-h-[85vh] flex flex-col lg:flex-row items-center lg:items-stretch gap-4 lg:gap-8"
+        className="relative max-w-7xl w-full my-auto lg:max-h-[85vh] flex flex-col lg:flex-row items-center lg:items-stretch gap-6 lg:gap-10"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Image Column */}
-        <div className="flex-1 flex items-center justify-center w-full">
+        <div className="flex-1 flex items-center justify-center w-full min-h-[300px]">
           <img 
             src={imageUrl} 
             alt="Full screen AI generated" 
-            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl shadow-cyan-500/20"
+            className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl shadow-black/20 dark:shadow-black/50"
           />
         </div>
 
         {/* Info & Actions Column */}
-        <div className="w-full lg:w-80 xl:w-96 flex-shrink-0 flex flex-col gap-4">
-          <div className="w-full bg-black/50 p-4 rounded-md border border-gray-700">
-              <div className="flex justify-between items-center mb-2">
-                  <h3 className="text-cyan-400 font-bold tracking-widest">PROMPT</h3>
-                  <button 
-                    onClick={handleCopyPrompt}
-                    className="flex-shrink-0 p-2 bg-gray-700/80 rounded-md hover:bg-cyan-500 hover:text-black transition-all duration-200 relative"
-                    aria-label="Copy prompt"
-                    title="Copy prompt"
-                  >
-                    <CopyIcon />
-                    {isCopied && (
-                        <div className="absolute -bottom-9 left-1/2 -translate-x-1/2 bg-cyan-500 text-black text-xs font-bold px-2 py-1 rounded-md animate-fade-in">
-                            Copied!
-                        </div>
-                    )}
-                  </button>
-              </div>
-              <p className="text-gray-300 text-sm font-mono max-h-48 overflow-y-auto break-words pr-2">
+        <div className="w-full lg:w-80 xl:w-96 flex-shrink-0 flex flex-col gap-4 bg-mantle p-6 rounded-xl border border-surface0 shadow-lg">
+          <div className="flex justify-between items-start mb-2">
+             <h3 className="text-primary font-bold uppercase tracking-widest text-sm">Prompt</h3>
+             <button 
+                onClick={handleCopyPrompt}
+                className="p-2 -mt-2 -mr-2 rounded-md text-subtext hover:bg-surface0 hover:text-text transition-colors relative group"
+                aria-label="Copy prompt"
+                title="Copy prompt"
+             >
+                <CopyIcon />
+                {isCopied && (
+                    <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-primary text-base text-xs font-bold px-2 py-1 rounded whitespace-nowrap shadow-md">
+                        Copied!
+                    </span>
+                )}
+             </button>
+          </div>
+          <div className="flex-grow overflow-y-auto max-h-48 pr-1 custom-scrollbar">
+             <p className="text-text text-sm font-mono leading-relaxed break-words">
                 {prompt}
-              </p>
+             </p>
           </div>
 
-          <div className="w-full bg-black/50 p-4 rounded-md border border-gray-700">
-            <h3 className="text-cyan-400 font-bold tracking-widest mb-2">DETAILS</h3>
-            <div className="text-gray-300 text-sm font-mono space-y-2 break-words">
-              <div>
-                <strong className="font-bold text-gray-400">Model:</strong>
-                <p>{model?.name || 'Unknown'}</p>
-              </div>
-              <div>
-                <strong className="font-bold text-gray-400">Created:</strong>
-                <p>{creationDate}</p>
-              </div>
-            </div>
+          <div className="space-y-3 border-t border-surface0 pt-4 mt-2">
+             <div className="flex justify-between">
+                <span className="text-subtext text-xs font-bold">Model</span>
+                <span className="text-text text-xs text-right">{model?.name || 'Unknown'}</span>
+             </div>
+             <div className="flex justify-between">
+                <span className="text-subtext text-xs font-bold">Date</span>
+                <span className="text-text text-xs text-right">{creationDate}</span>
+             </div>
           </div>
           
           <button
             onClick={handleDownload}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-cyan-500 text-black font-bold rounded-md hover:bg-cyan-400 hover:shadow-lg hover:shadow-cyan-500/50 transition-all duration-200 mt-auto"
+            className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-base font-bold rounded-lg hover:bg-primary-hover transition-colors shadow-md"
             aria-label="Download image"
           >
             <DownloadIcon />
@@ -157,7 +154,7 @@ export const FullScreenImageViewer: React.FC<FullScreenImageViewerProps> = ({ hi
       {canGoNext && (
         <button
           onClick={(e) => { e.stopPropagation(); onNavigate('next'); }}
-          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/50 text-white hover:bg-black/75 hover:scale-110 transition-all"
+          className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-surface0/50 text-text hover:bg-surface1 hover:scale-105 transition-all shadow-sm"
           aria-label="Next image"
         >
           <ChevronRightIcon />
@@ -166,10 +163,10 @@ export const FullScreenImageViewer: React.FC<FullScreenImageViewerProps> = ({ hi
 
       <button 
         onClick={onClose}
-        className="absolute top-4 right-4 p-2 rounded-full bg-black/50 text-white hover:bg-black/75 hover:scale-110 transition-all z-20"
+        className="absolute top-6 right-6 p-2 rounded-full bg-surface0/50 text-text hover:bg-error hover:text-white transition-all z-20 shadow-sm"
         aria-label="Close full screen view"
       >
-        <CloseIcon size={28} />
+        <CloseIcon size={24} />
       </button>
     </div>
   );

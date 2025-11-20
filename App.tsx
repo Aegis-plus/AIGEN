@@ -21,6 +21,15 @@ const ALL_MODELS: Model[] = [
 ];
 
 const App: React.FC = () => {
+  // Theme state
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      return savedTheme === 'dark';
+    }
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+
   // Image generation state
   const [prompt, setPrompt] = useState<string>('');
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -42,6 +51,19 @@ const App: React.FC = () => {
 
   // Full screen state
   const [fullScreenHistoryId, setFullScreenHistoryId] = useState<number | null>(null);
+
+  // Theme effect
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDark]);
+
+  const toggleTheme = () => setIsDark(!isDark);
 
   // Load history and prompt from localStorage on mount
   useEffect(() => {
@@ -215,9 +237,6 @@ const App: React.FC = () => {
     if (currentIndex === -1) return;
 
     let newIndex;
-    // History is sorted newest to oldest (0 is newest).
-    // 'prev' moves to a newer item (lower index).
-    // 'next' moves to an older item (higher index).
     if (direction === 'next') {
         newIndex = currentIndex + 1;
     } else { // prev
@@ -246,9 +265,9 @@ const App: React.FC = () => {
   const isGenerateDisabled = isLoading || (isAirforceModelSelected && countdown > 0);
 
   const getButtonText = () => {
-    if (isLoading) return 'SYNTHESIZING...';
-    if (isAirforceModelSelected && countdown > 0) return `RECHARGING (${countdown}s)`;
-    return 'GENERATE';
+    if (isLoading) return 'Synthesizing...';
+    if (isAirforceModelSelected && countdown > 0) return `Recharging (${countdown}s)`;
+    return 'Generate';
   };
   
   const totalHistoryPages = Math.ceil(history.length / ITEMS_PER_PAGE);
@@ -258,16 +277,16 @@ const App: React.FC = () => {
     : null;
 
   return (
-    <div className="min-h-screen bg-[#0D1117] text-gray-200 flex flex-col font-mono">
-      <Header />
+    <div className="min-h-screen flex flex-col font-sans transition-colors duration-300 bg-base text-text">
+      <Header isDark={isDark} toggleTheme={toggleTheme} />
       <main className="flex-grow flex flex-col items-center p-4 sm:p-6 lg:p-8">
         <div className="w-full max-w-4xl flex flex-col items-center gap-8">
-          <div className="text-center">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-cyan-400" style={{ textShadow: '0 0 8px rgba(0, 187, 255, 0.7)' }}>
-              SYNTHESIZE REALITY
+          <div className="text-center space-y-2">
+            <h2 className="text-3xl sm:text-4xl font-bold text-primary tracking-tight">
+              Synthesize Reality
             </h2>
-            <p className="mt-2 text-lg text-gray-400">
-              Input data stream. Generate visual output.
+            <p className="text-lg text-subtext font-light">
+              Transform text into visual output with advanced AI models.
             </p>
           </div>
           
@@ -276,7 +295,6 @@ const App: React.FC = () => {
             isLoading={isLoading}
             error={error}
             onImageClick={() => {
-              // The main display always shows the latest generated image, which is history[0].
               if (history.length > 0) {
                 openFullScreen(history[0].createdAt);
               }
@@ -308,20 +326,20 @@ const App: React.FC = () => {
               <button
                 onClick={handleGenerate}
                 disabled={isGenerateDisabled || !prompt.trim()}
-                className="flex-grow flex items-center justify-center px-4 py-2 bg-cyan-500 text-black font-bold rounded-md shadow-lg hover:bg-cyan-400 hover:shadow-cyan-500/50 disabled:hover:shadow-none disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed transition-all duration-200"
+                className="flex-grow flex items-center justify-center px-6 py-2.5 bg-primary text-base font-semibold rounded-lg shadow-md hover:bg-primary-hover hover:shadow-lg disabled:bg-surface1 disabled:text-subtext disabled:cursor-not-allowed disabled:shadow-none transition-all duration-200"
               >
                 <span>{getButtonText()}</span>
               </button>
             </div>
             {!isWorkerModelSelected && (
-              <p className="text-center text-xs text-yellow-400/80 mt-1">
+              <p className="text-center text-xs text-warn mt-1">
                   Note: Aspect ratio selection is only available for Leonardo models.
               </p>
             )}
           </div>
           
           {historyError && (
-            <div role="alert" aria-live="polite" className="w-full text-center text-xs text-yellow-400/90 animate-fade-in p-2 bg-yellow-900/20 border border-yellow-500/30 rounded-md">
+            <div role="alert" aria-live="polite" className="w-full text-center text-sm text-warn animate-fade-in p-3 bg-warn/10 border border-warn/30 rounded-lg">
               {historyError}
             </div>
           )}
@@ -339,11 +357,11 @@ const App: React.FC = () => {
           )}
         </div>
       </main>
-      <footer className="w-full p-4">
-        <div className="text-center text-xs text-gray-500">
-          <span>Made by <a href="http://www.aegis.zone.id" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition-colors">AEGIS+</a></span>
-          <span className="mx-2">|</span>
-          <span>Powered by <a href="https://g4f.dev" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition-colors">g4f.dev</a></span>
+      <footer className="w-full p-6 border-t border-surface0">
+        <div className="text-center text-xs text-subtext flex justify-center items-center gap-4">
+          <span>Made by <a href="http://www.aegis-plus.my.id" target="_blank" rel="noopener noreferrer" className="font-semibold text-primary hover:underline decoration-wavy decoration-1">AEGIS+</a></span>
+          <span className="text-surface1">|</span>
+          <span>Powered by <a href="https://g4f.dev" target="_blank" rel="noopener noreferrer" className="font-semibold text-primary hover:underline decoration-wavy decoration-1">g4f.dev</a></span>
         </div>
       </footer>
       {fullScreenHistoryItem && (

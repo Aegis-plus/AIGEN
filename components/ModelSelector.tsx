@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Model } from '../types';
 import { ChevronDownIcon } from './icons';
@@ -17,20 +18,20 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({ model, setModel, i
   }
 
   return (
-    <div className="relative w-full sm:w-64">
+    <div className="relative w-full sm:w-72">
       <select
         id="model-select"
         value={model}
         onChange={(e) => setModel(e.target.value)}
         disabled={isLoading || models.length === 0}
-        className="appearance-none bg-black/50 border-2 border-gray-700 text-gray-200 text-sm rounded-md focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 font-mono pr-10"
+        className="appearance-none bg-input border border-surface0 text-text text-sm rounded-lg focus:ring-2 focus:ring-primary focus:border-primary block w-full p-3 pr-10 transition-shadow shadow-sm"
         aria-label="Select image generation model"
       >
-        <option value="" disabled className="text-gray-500 bg-[#0D1117]">
+        <option value="" disabled className="text-subtext">
           {getLabel()}
         </option>
         {models.map((m) => (
-          <option key={m.id} value={m.id} className="bg-[#0D1117] text-gray-200">
+          <option key={m.id} value={m.id} className="bg-input text-text py-2">
             {m.name}
           </option>
         ))}

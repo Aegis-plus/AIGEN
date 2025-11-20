@@ -48,21 +48,21 @@ export const PromptInput: React.FC<PromptInputProps> = ({ prompt, setPrompt, onG
   };
   
   return (
-    <div className="relative w-full">
+    <div className="relative w-full group">
       <textarea
         ref={textareaRef}
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="e.g., A cybernetic owl with neon feathers..."
-        className="w-full bg-black/50 border-2 border-gray-700 rounded-md p-3 pr-12 text-gray-200 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-300 resize-none font-mono max-h-40 overflow-y-auto"
-        rows={1}
+        placeholder="Imagine something wonderful..."
+        className="w-full bg-input border border-surface0 rounded-lg p-4 pr-12 text-text placeholder-overlay focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 resize-none font-mono text-base max-h-48 overflow-y-auto shadow-sm"
+        rows={2}
         disabled={isLoading}
       />
       <button
         onClick={handlePaste}
         disabled={isLoading}
-        className="absolute top-3 right-5 p-1.5 rounded-md bg-gray-800/60 text-gray-400 hover:bg-cyan-500 hover:text-black transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="absolute top-3 right-3 p-2 rounded-md text-subtext hover:bg-surface1 hover:text-text transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         aria-label="Paste from clipboard"
         title="Paste from clipboard"
       >

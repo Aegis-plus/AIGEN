@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -6,10 +7,86 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AIGEN</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      body {
-        background-color: #0D1117; /* New dark background */
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              base: 'var(--color-base)',
+              mantle: 'var(--color-mantle)',
+              crust: 'var(--color-crust)',
+              text: 'var(--color-text)',
+              subtext: 'var(--color-subtext)',
+              overlay: 'var(--color-overlay)',
+              surface0: 'var(--color-surface0)',
+              surface1: 'var(--color-surface1)',
+              surface2: 'var(--color-surface2)',
+              primary: 'var(--color-primary)',
+              'primary-hover': 'var(--color-primary-hover)',
+              error: 'var(--color-error)',
+              success: 'var(--color-success)',
+              warn: 'var(--color-warn)',
+              input: 'var(--color-input)',
+            },
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              mono: ['JetBrains Mono', 'monospace'],
+            }
+          }
+        }
       }
+    </script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+      :root {
+        /* Catppuccin Latte (Light) */
+        color-scheme: light;
+        --color-base: #eff1f5;
+        --color-mantle: #e6e9ef;
+        --color-crust: #dce0e8;
+        --color-text: #4c4f69;
+        --color-subtext: #6c6f85;
+        --color-overlay: #9ca0b0;
+        --color-surface0: #ccd0da;
+        --color-surface1: #bcc0cc;
+        --color-surface2: #acb0be;
+        --color-primary: #1e66f5;
+        --color-primary-hover: #164db5;
+        --color-error: #d20f39;
+        --color-success: #40a02b;
+        --color-warn: #df8e1d;
+        --color-input: #ffffff;
+      }
+
+      .dark {
+        /* Catppuccin Mocha (Dark) */
+        color-scheme: dark;
+        --color-base: #1e1e2e;
+        --color-mantle: #181825;
+        --color-crust: #11111b;
+        --color-text: #cdd6f4;
+        --color-subtext: #a6adc8;
+        --color-overlay: #6c7086;
+        --color-surface0: #313244;
+        --color-surface1: #45475a;
+        --color-surface2: #585b70;
+        --color-primary: #89b4fa;
+        --color-primary-hover: #b4befe;
+        --color-error: #f38ba8;
+        --color-success: #a6e3a1;
+        --color-warn: #f9e2af;
+        --color-input: #313244;
+      }
+
+      body {
+        background-color: var(--color-base);
+        color: var(--color-text);
+        font-family: 'Inter', sans-serif;
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+
       @keyframes fadeIn {
         from { opacity: 0; }
         to { opacity: 1; }
@@ -17,12 +94,21 @@
       .animate-fade-in {
         animation: fadeIn 0.3s ease-out forwards;
       }
-      @keyframes glow {
-        0%, 100% { box-shadow: 0 0 5px #00BFFF, 0 0 10px #00BFFF, 0 0 15px #00BFFF; }
-        50% { box-shadow: 0 0 10px #00BFFF, 0 0 20px #00BFFF, 0 0 30px #00BFFF; }
+
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
       }
-      .animate-glow {
-        animation: glow 2.5s ease-in-out infinite;
+      ::-webkit-scrollbar-track {
+        background: var(--color-mantle);
+      }
+      ::-webkit-scrollbar-thumb {
+        background-color: var(--color-surface1);
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background-color: var(--color-overlay);
       }
     </style>
   <script type="importmap">
