@@ -6,7 +6,7 @@ const PRECACHE_ASSETS = [
   '/index.html',
   '/index.tsx',
   '/manifest.json',
-  '/vite.svg'
+  '/icon.svg'
 ];
 
 self.addEventListener('install', (event) => {

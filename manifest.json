@@ -9,12 +9,17 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/vite.svg",
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    },
+    {
+      "src": "/icon.svg",
       "type": "image/svg+xml",
       "sizes": "192x192"
     },
     {
-      "src": "/vite.svg",
+      "src": "/icon.svg",
       "type": "image/svg+xml",
       "sizes": "512x512"
     }
