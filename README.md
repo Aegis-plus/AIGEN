@@ -5,19 +5,19 @@
 [![React](https://img.shields.io/badge/react-19.2.0-blue?logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/typescript-5.8.2-blue?logo=typescript)](https://www.typescriptlang.org)
 
-> Transform text prompts into stunning AI-generated images with AIGEN—a fast, intuitive web application powered by advanced AI models.
+> Transform text prompts into stunning AI-generated images with AIGEN—a fast, intuitive web application powered by advanced AI models via g4f.dev.
 
 ## 🌟 Overview
 
-AIGEN is a modern web application that leverages cutting-edge AI models to generate high-quality images from descriptive text prompts. Built with React, TypeScript, and Vite, it provides a seamless user experience with support for multiple AI providers and models.
+AIGEN is a modern web application that leverages cutting-edge AI models to generate high-quality images from descriptive text prompts. Built with React, TypeScript, and Vite, it provides a seamless user experience with support for multiple AI providers and models through the g4f.dev API.
 
 **Live Demo:** [https://aigen.aegis-plus.my.id/](https://aigen.aegis-plus.my.id/)
 
 ## ✨ Features
 
 - **🎨 AI-Powered Image Generation** - Create unique images from descriptive text prompts using state-of-the-art AI models
-- **🔄 Multiple AI Models** - Choose from a variety of AI models and providers for different generation styles
-- **⚡ Smart Rate Limiting** - Built-in cooldown mechanism to manage API request rates efficiently
+- **🔄 Multiple AI Models** - Choose from Lucid-origin (Leonardo), Phoenix 1.0 (Leonardo), Imagen 3 & 4 (Google), and Seedream 4 (ByteDance)
+- **⚡ Smart Rate Limiting** - Built-in cooldown mechanism to manage g4f.dev API request rates efficiently
 - **📜 Generation History** - Local storage-powered history to track and revisit your generated images and prompts
 - **🖼️ Full-Screen Viewer** - Enhanced viewing experience with full-screen image display capabilities
 - **📱 Responsive Design** - Fully responsive interface that works seamlessly across devices
@@ -30,7 +30,7 @@ AIGEN is a modern web application that leverages cutting-edge AI models to gener
 | **TypeScript** | Type-safe development |
 | **Vite** | Build tool and dev server |
 | **Tailwind CSS** | Styling and responsive design |
-| **Google Generative AI** | AI model integration |
+| **g4f.dev API** | AI model integration and image generation |
 
 ## 📋 Prerequisites
 
@@ -119,8 +119,16 @@ AIGEN/
 
 ## 🔌 API Integration
 
-AIGEN uses the Google Generative AI API for image generation. The application intelligently manages:
-- Multiple AI model providers
+AIGEN uses the g4f.dev API for image generation, providing access to multiple state-of-the-art AI models:
+
+**Available Models:**
+- **Lucid-origin** - Leonardo AI's advanced image generation model
+- **Phoenix 1.0** - Leonardo AI's high-performance model
+- **Imagen 3 & 4** - Google's cutting-edge image generation models
+- **Seedream 4** - ByteDance's innovative image generation model
+
+The application intelligently manages:
+- Multiple AI model providers through g4f.dev
 - Request rate limiting and cooldown periods
 - Error handling and user feedback
 
@@ -150,7 +158,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - **Created by:** [AEGIS+](https://github.com/Aegis-plus)
-- **Powered by:** [Google Generative AI](https://ai.google.dev/)
+- **Powered by:** [g4f.dev](https://g4f.dev) - Free AI API aggregator
+- **AI Models:** Leonardo AI, Google Imagen, and ByteDance Seedream
 - **Built with:** [React](https://react.dev), [Vite](https://vitejs.dev), and [Tailwind CSS](https://tailwindcss.com)
 
 ## 📞 Support
