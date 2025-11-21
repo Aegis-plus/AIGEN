@@ -1,0 +1,22 @@
+{
+  "name": "AIGEN - AI Image Generator",
+  "short_name": "AIGEN",
+  "description": "A free AI image generator that allows you to create stunning visuals from text prompts.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#eff1f5",
+  "theme_color": "#eff1f5",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/vite.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512"
+    }
+  ]
+}
