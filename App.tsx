@@ -3,14 +3,15 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Header } from './components/Header';
 import { PromptInput } from './components/PromptInput';
 import { ImageDisplay } from './components/ImageDisplay';
-import { generateImage, hostImage } from './services/AIService';
+import { generateImage, hostImage, b64toBlob } from './services/AIService';
 import { ModelSelector } from './components/ModelSelector';
 import { Model, HistoryItem, AspectRatio } from './types';
 import { FullScreenImageViewer } from './components/FullScreenImageViewer';
 import { HistoryGallery } from './components/HistoryGallery';
 import { AspectRatioSelector } from './components/AspectRatioSelector';
 import { loadHistoryFromStorage, saveHistoryToStorage, clearHistoryInStorage, ITEMS_PER_PAGE } from './services/historyService';
-import { getDisplayUrl } from './utils/helpers';
+import { getDisplayUrl, isPWA } from './utils/helpers';
+import { saveImageToDB, clearImagesFromDB } from './services/indexedDbService';
 
 const ALL_MODELS: Model[] = [
   { id: '@cf/leonardo/lucid-origin', provider: 'worker', name: 'Lucid Origin (Leonardo)' },
@@ -51,6 +52,15 @@ const App: React.FC = () => {
 
   // Full screen state
   const [fullScreenHistoryId, setFullScreenHistoryId] = useState<number | null>(null);
+
+  // Request Persistent Storage for PWA
+  useEffect(() => {
+    if (isPWA() && navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist().then(persistent => {
+        console.log('Persistent storage granted:', persistent);
+      });
+    }
+  }, []);
 
   // Theme effect
   useEffect(() => {
@@ -215,6 +225,23 @@ const App: React.FC = () => {
       setImageUrl(getDisplayUrl(newHistoryItem));
       setHistoryPage(1);
 
+      // 5. If PWA, save to IndexedDB for offline access
+      if (isPWA()) {
+         try {
+             let blob: Blob;
+             if (result.type === 'b64_json') {
+                 blob = b64toBlob(result.data);
+             } else {
+                 // Fetch from the result URL (could be the hosted URL or the generated source URL)
+                 const response = await fetch(result.type === 'url' ? result.data : finalUrl);
+                 blob = await response.blob();
+             }
+             await saveImageToDB(newHistoryItem.createdAt, blob);
+         } catch (idbError) {
+             console.error('Failed to save image to persistent storage', idbError);
+         }
+      }
+
     } catch (err: any)      {
       setError(err.message || 'An unexpected error occurred. Please try again.');
     } finally {
@@ -248,11 +275,14 @@ const App: React.FC = () => {
     }
   };
 
-  const handleClearHistory = () => {
+  const handleClearHistory = async () => {
     try {
       clearHistoryInStorage();
       setHistory([]);
       setHistoryPage(1);
+      if (isPWA()) {
+          await clearImagesFromDB();
+      }
     } catch (e: any) {
       setHistoryError(e.message || 'Could not clear history.');
       setTimeout(() => setHistoryError(null), 5000);
@@ -296,7 +326,13 @@ const App: React.FC = () => {
             error={error}
             onImageClick={() => {
               if (history.length > 0) {
-                openFullScreen(history[0].createdAt);
+                // If the current image url corresponds to the first history item, use that timestamp
+                // Otherwise fallback to the first item (most recent)
+                if (history[0] && getDisplayUrl(history[0]) === imageUrl) {
+                    openFullScreen(history[0].createdAt);
+                } else if (history.length > 0) {
+                    openFullScreen(history[0].createdAt);
+                }
               }
             }}
           />

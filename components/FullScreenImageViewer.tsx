@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { CloseIcon, DownloadIcon, CopyIcon, ChevronLeftIcon, ChevronRightIcon } from './icons';
 import { HistoryItem, Model } from '../types';
 import { getDisplayUrl } from '../utils/helpers';
+import { HistoryImage } from './HistoryImage';
 
 interface FullScreenImageViewerProps {
   historyItem: HistoryItem;
@@ -27,7 +28,11 @@ export const FullScreenImageViewer: React.FC<FullScreenImageViewerProps> = ({ hi
 
   const handleDownload = async () => {
     try {
-      const response = await fetch(imageUrl);
+      // Try to fetch the current src (could be objectURL or remote URL)
+      const imgElement = document.querySelector('.fullscreen-image') as HTMLImageElement;
+      const currentSrc = imgElement?.src || imageUrl;
+      
+      const response = await fetch(currentSrc);
       if (!response.ok) throw new Error('Failed to fetch image');
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -97,10 +102,10 @@ export const FullScreenImageViewer: React.FC<FullScreenImageViewerProps> = ({ hi
       >
         {/* Image Column */}
         <div className="flex-1 flex items-center justify-center w-full min-h-[300px]">
-          <img 
-            src={imageUrl} 
+          <HistoryImage
+            item={historyItem} 
             alt="Full screen AI generated" 
-            className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl shadow-black/20 dark:shadow-black/50"
+            className="fullscreen-image max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl shadow-black/20 dark:shadow-black/50"
           />
         </div>
 

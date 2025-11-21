@@ -29,3 +29,11 @@ export const getDisplayUrl = (item: HistoryItem): string => {
   // Return a blank page if no valid URL can be found.
   return 'about:blank';
 };
+
+/**
+ * Checks if the app is running in Standalone mode (PWA).
+ */
+export const isPWA = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
+};

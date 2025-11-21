@@ -11,7 +11,7 @@ const ANONDROP_USER_KEY_STORAGE = 'anondrop_userkey';
 /**
  * Converts a base64 string to a Blob object.
  */
-function b64toBlob(b64Data: string, contentType = 'image/png', sliceSize = 512): Blob {
+export function b64toBlob(b64Data: string, contentType = 'image/png', sliceSize = 512): Blob {
   const byteCharacters = atob(b64Data);
   const byteArrays = [];
 

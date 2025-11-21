@@ -2,8 +2,8 @@
 import React from 'react';
 import { HistoryItem, Model } from '../types';
 import { TrashIcon, ChevronLeftIcon, ChevronRightIcon } from './icons';
-import { getDisplayUrl } from '../utils/helpers';
 import { ITEMS_PER_PAGE } from '../services/historyService';
+import { HistoryImage } from './HistoryImage';
 
 interface HistoryGalleryProps {
   history: HistoryItem[];
@@ -42,7 +42,6 @@ export const HistoryGallery: React.FC<HistoryGalleryProps> = ({ history, models,
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
         {history.map((item, index) => {
-          const displayUrl = getDisplayUrl(item);
           const isVisible = index >= startIndex && index < endIndex;
 
           return (
@@ -57,11 +56,11 @@ export const HistoryGallery: React.FC<HistoryGalleryProps> = ({ history, models,
               role="button"
               aria-label={`View image generated with prompt: ${item.prompt}`}
             >
-              <img
-                src={displayUrl}
-                alt={item.prompt}
+              <HistoryImage
+                item={item}
                 loading="lazy"
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                alt={item.prompt}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
                 <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-1" title={getModelName(item.modelId)}>{getModelName(item.modelId)}</p>
