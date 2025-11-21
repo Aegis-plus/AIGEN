@@ -1,64 +1,170 @@
-# AIGEN-free
-## SYNTHESIZE REALITY
-Input data stream. Generate visual output.
+# AIGEN - AI Image Generation
 
-A web application that leverages AI models through the g4f.dev API to generate images from text prompts.
+[![GitHub](https://img.shields.io/badge/github-Aegis--plus%2FAIGEN-blue?logo=github)](https://github.com/Aegis-plus/AIGEN)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![React](https://img.shields.io/badge/react-19.2.0-blue?logo=react)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/typescript-5.8.2-blue?logo=typescript)](https://www.typescriptlang.org)
 
-## Features
+> Transform text prompts into stunning AI-generated images with AIGEN—a fast, intuitive web application powered by advanced AI models.
 
-*   **AI-Powered Image Generation:** Create unique images from descriptive text prompts.
-*   **Model Selection:** Choose from a variety of AI models and providers, including options from 'worker' and 'api.airforce'.
-*   **Rate Limiting Awareness:** Includes a cooldown mechanism for specific API providers to manage request rates.
-*   **Generation History:** Keeps a local history of your generated images and prompts, powered by `localStorage`.
-*   **Full-Screen Viewer:** Easily view your generated images in a larger format.
+## 🌟 Overview
 
-## Technologies Used
+AIGEN is a modern web application that leverages cutting-edge AI models to generate high-quality images from descriptive text prompts. Built with React, TypeScript, and Vite, it provides a seamless user experience with support for multiple AI providers and models.
 
-*   **Frontend:** React, Vite
-*   **AI Integration:** g4f.dev API
-*   **Styling:** Tailwind CSS (inferred from class names)
-*   **Language:** TypeScript
+**Live Demo:** [https://aigen.aegis-plus.my.id/](https://aigen.aegis-plus.my.id/)
 
-## Installation & Setup
+## ✨ Features
 
-1.  Clone the repository:
-    ```bash
-    git clone https://github.com/Aegis-plus/AIGEN.git
-    ```
-2.  Navigate to the project directory:
-    ```bash
-    cd AIGEN
-    ```
-3.  Install dependencies:
-    ```bash
-    npm install
-    # or
-    yarn install
-    ```
-4.  Start the development server:
-    ```bash
-    npm run dev
-    # or
-    yarn dev
-    ```
+- **🎨 AI-Powered Image Generation** - Create unique images from descriptive text prompts using state-of-the-art AI models
+- **🔄 Multiple AI Models** - Choose from a variety of AI models and providers for different generation styles
+- **⚡ Smart Rate Limiting** - Built-in cooldown mechanism to manage API request rates efficiently
+- **📜 Generation History** - Local storage-powered history to track and revisit your generated images and prompts
+- **🖼️ Full-Screen Viewer** - Enhanced viewing experience with full-screen image display capabilities
+- **📱 Responsive Design** - Fully responsive interface that works seamlessly across devices
 
-## Usage
+## 🛠️ Technology Stack
 
-1.  Open the application in your browser (usually at `http://localhost:5173` or a similar port).
-2.  Select your desired AI model from the dropdown menu.
-3.  Enter a descriptive prompt in the input field.
-4.  Click the "Generate" button (or press Enter).
-5.  View your generated image, and it will be added to your history.
+| Technology | Purpose |
+|-----------|---------|
+| **React 19** | UI framework |
+| **TypeScript** | Type-safe development |
+| **Vite** | Build tool and dev server |
+| **Tailwind CSS** | Styling and responsive design |
+| **Google Generative AI** | AI model integration |
 
-## Contributing
+## 📋 Prerequisites
 
-Contributions are welcome! Please feel free to submit a Pull Request or open an issue.
+- Node.js (v16 or higher)
+- npm or yarn package manager
 
-## License
+## 🚀 Getting Started
 
-This project is not specified with a license.
+### Installation
 
-## Acknowledgements
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/Aegis-plus/AIGEN.git
+   cd AIGEN
+   ```
 
-*   Made by AEGIS+
-*   Powered by [g4f.dev](https://g4f.dev)
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+   or
+   ```bash
+   yarn install
+   ```
+
+3. **Start the development server:**
+   ```bash
+   npm run dev
+   ```
+   or
+   ```bash
+   yarn dev
+   ```
+
+4. **Open in browser:**
+   Navigate to `http://localhost:5173` (or the port shown in your terminal)
+
+### Build for Production
+
+```bash
+npm run build
+```
+
+This creates an optimized production build in the `dist` directory.
+
+### Preview Production Build
+
+```bash
+npm run preview
+```
+
+## 📖 Usage
+
+1. **Launch the application** - Open AIGEN in your web browser
+2. **Select an AI model** - Choose from available AI models using the model selector dropdown
+3. **Enter a prompt** - Describe the image you want to generate in the text input field
+4. **Generate** - Click the "Generate" button or press Enter to create your image
+5. **View results** - Your generated image appears on screen and is automatically saved to your history
+6. **Full-screen view** - Click on any generated image to view it in full-screen mode
+
+## 📁 Project Structure
+
+```
+AIGEN/
+├── components/           # React components
+│   ├── Header.tsx
+│   ├── PromptInput.tsx
+│   ├── ModelSelector.tsx
+│   ├── ImageDisplay.tsx
+│   ├── HistoryGallery.tsx
+│   ├── AspectRatioSelector.tsx
+│   ├── FullScreenImageViewer.tsx
+│   └── icons.tsx
+├── services/            # Business logic and API integration
+│   ├── AIService.ts
+│   └── historyService.ts
+├── utils/               # Utility functions
+│   └── helpers.ts
+├── App.tsx              # Main application component
+├── index.tsx            # Entry point
+├── index.html           # HTML template
+├── vite.config.ts       # Vite configuration
+├── tsconfig.json        # TypeScript configuration
+└── package.json         # Project dependencies
+```
+
+## 🔌 API Integration
+
+AIGEN uses the Google Generative AI API for image generation. The application intelligently manages:
+- Multiple AI model providers
+- Request rate limiting and cooldown periods
+- Error handling and user feedback
+
+## 💾 Local Storage
+
+The application uses browser `localStorage` to persist:
+- Generation history
+- User preferences
+- Previously generated prompts
+
+## 🤝 Contributing
+
+Contributions are welcome! To contribute:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+Please ensure your code follows the project's coding standards and includes appropriate tests.
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- **Created by:** [AEGIS+](https://github.com/Aegis-plus)
+- **Powered by:** [Google Generative AI](https://ai.google.dev/)
+- **Built with:** [React](https://react.dev), [Vite](https://vitejs.dev), and [Tailwind CSS](https://tailwindcss.com)
+
+## 📞 Support
+
+For issues, questions, or suggestions, please:
+- Open an [GitHub Issue](https://github.com/Aegis-plus/AIGEN/issues)
+- Contact the development team
+
+---
+
+<div align="center">
+
+**[⬆ Back to Top](#aigen---ai-image-generation)**
+
+Made with ❤️ by AEGIS+
+
+</div>
