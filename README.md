@@ -126,6 +126,7 @@ AIGEN uses the g4f.dev API for image generation, providing access to multiple st
 - **Phoenix 1.0** - Leonardo AI's high-performance model
 - **Imagen 3 & 4** - Google's cutting-edge image generation models
 - **Seedream 4** - ByteDance's innovative image generation model
+- **GPT Image** - Openai image generation model
 
 The application intelligently manages:
 - Multiple AI model providers through g4f.dev
