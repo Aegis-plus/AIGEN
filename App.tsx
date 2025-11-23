@@ -18,6 +18,7 @@ const ALL_MODELS: Model[] = [
   { id: '@cf/leonardo/phoenix-1.0', provider: 'worker', name: 'Phoenix 1.0 (Leonardo)' },
   { id: 'imagen-3', provider: 'api.airforce', name: 'Imagen 3 (Google)' },
   { id: 'imagen-4', provider: 'api.airforce', name: 'Imagen 4 (Google)' },
+  { id: 'gpt-image-1', provider: 'api.airforce', name: 'GPT Image (Openai)' },
   { id: 'ByteDance/Seedream-4', provider: 'deep-infra', name: 'Seedream 4 (ByteDance)' },
 ];
 
